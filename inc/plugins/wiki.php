@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.1.1",
+		"version"		=> "1.1.2",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -209,7 +209,7 @@ function wiki_mycode($message)
 function wiki_mycode_createID(array $match)
 {
 	global $db, $settings;
-	$id=$db->escape_string($match[1]); $name=$match[2];
+	$id=intval($match[1]); $name=$match[2];
 	$query=$db->simple_select("wiki", "text, link, short", "id='{$id}'");
 	$wiki=$db->fetch_array($query);
 	if($wiki['link'])

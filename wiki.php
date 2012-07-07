@@ -66,8 +66,7 @@ if($mybb->input['action']=="do_article_add" && $mybb->request_method == "post") 
 			'is_closed' => $close,
 			'awaiting_moderation' => $moderate
 		);
-		$db->insert_query('wiki', $insert_array);
-		$nid = $db->insert_id();
+		$nid = $db->insert_query('wiki', $insert_array);
 
 		log_moderator_action("", $lang->wiki_log_add.": ".$mybb->input['wiki_title']);
 
@@ -180,7 +179,7 @@ if($mybb->input['action']=="article_edit") {
 	}
 
 	$wiki_id = intval($mybb->input['wid']);
-	$query = $db->simple_select("wiki", "id, cid, title, link, short, text, is_hidden, is_closed", "id='{$wiki_id}'");
+	$query = $db->simple_select("wiki", "id, uid, cid, title, link, short, text, is_hidden, is_closed", "id='{$wiki_id}'");
 	$wiki = $db->fetch_array($query);
 	// Coming back to this page from an error?
 	if($errors)
@@ -273,8 +272,7 @@ if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post")
 		$insert_array = array(
 			'title' => $db->escape_string($mybb->input['wiki_name'])
 		);
-		$db->insert_query('wiki_cats', $insert_array);
-		$nid = $db->insert_id();
+		$nid = $db->insert_query('wiki_cats', $insert_array);
 
 		log_moderator_action("", $lang->wiki_log_category_add.": ".$mybb->input['wiki_name']);
 
@@ -392,6 +390,8 @@ if($mybb->input['action']=="restore") {
 
 	if(!$errors) {
 		$entry=@unserialize($entry['entry']);
+		foreach($entry as $key => $value)
+		    $entry[$key] = $db->escape_string($value);
 		$db->insert_query('wiki', $entry);
 		$db->delete_query("wiki_trash", "id='{$wid}'");
 		log_moderator_action("", $lang->wiki_log_restored.": ".$entry['title']);
@@ -426,10 +426,12 @@ if($mybb->input['action']=="trash") {
 	$trash_query=$db->simple_select("wiki_trash", "*", "", array("order_by"=>"date", "order_dir"=>"desc"));
 	while($entry=$db->fetch_array($trash_query)) {
 		$trash=@unserialize($entry['entry']);
-		$query=$db->simple_select("wiki_cats", "title AS category", "id='".$trash['cid']."'");
+		$trash_cid = intval($trash['cid']);
+		$query=$db->simple_select("wiki_cats", "title AS category", "id='{$trash_cid}'");
 		$trash=array_merge($trash, $db->fetch_array($query));
 		$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);
-		$query=$db->simple_select("users", "username AS deletedfrom", "uid='".$entry['from']."'");
+		$entry_from = intval($entry['from']);
+		$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 		$trash=array_merge($trash, $db->fetch_array($query));
 		$trash['id']=$entry['id'];
 		$wiki_trash = WIKI_TRASH;
@@ -450,9 +452,12 @@ if($mybb->input['action']=="restore_version") {
 	$query=$db->simple_select('wiki_versions', "*", "id='{$vid}'");
 	$wiki=$db->fetch_array($query);
 	$wiki=@unserialize($wiki['entry']);
-	$query=$db->simple_select('wiki', "*", "id='".$wiki['id']."'");
+	$wid = intval($wiki['id']);
+	$query=$db->simple_select('wiki', "*", "id='{$wid}'");
 	$awiki=$db->fetch_array($query);
 	$entry=serialize($awiki);
+	foreach($wiki as $key => $value)
+	    $wiki[$key] = $db->escape_string($value);
 	$db->insert_query('wiki_versions', array("wid"=>$awiki['id'],"entry"=>$db->escape_string($entry)));
 	$db->delete_query('wiki_versions', "id='{$vid}'");
 	$db->update_query('wiki', $wiki, "id='".$awiki['id']."'");
@@ -497,7 +502,8 @@ if($mybb->input['action']=="show_version") {
 	$wiki=$db->fetch_array($query);
 	$wiki=@unserialize($wiki['entry']);
 	$wiki['formateddate']=date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
-	$query=$db->simple_select('wiki', "*", "id='".$wiki['id']."'");
+	$wid = intval($wiki['id']);
+	$query=$db->simple_select('wiki', "*", "id='{$wid}'");
 	$awiki=$db->fetch_array($query);
 	add_breadcrumb($awiki['title'], wiki_get_article($awiki['id']));
 	add_breadcrumb($lang->wiki_versions, wiki_get_versions($awiki['id']));
@@ -508,7 +514,7 @@ if($mybb->input['action']=="show_version") {
 
 	$wiki_title = $wiki['title'];
 	$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
-	$cid=$wiki['cid'];
+	$cid=intval($wiki['cid']);
 	$test = $db->simple_select("wiki_cats", "id, title", "id='{$cid}'");
 	$category=$db->fetch_array($test);
 	$uid=intval($wiki['uid']);
@@ -532,7 +538,7 @@ if($mybb->input['action']=="versions") {
 	while($wiki=$db->fetch_array($query)) {
 		$vid=$wiki['id'];
 		$wiki=@unserialize($wiki['entry']);
-		$uid=$wiki['uid'];
+		$uid=intval($wiki['uid']);
 		$wiki['date']=date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
 		$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 		$user=$db->fetch_array($user);
@@ -574,7 +580,7 @@ if($mybb->input['action']=="new") {
 	add_breadcrumb($lang->wiki_nav_new, WIKI_NEW);
 	$new_query = $db->simple_select("wiki", "id, title, short, uid, date", "", array("limit"=>"10", "order_by"=>"date", "order_dir"=>"desc"));
 	while($wiki=$db->fetch_array($new_query)) {
-		$uid = $wiki['uid'];
+		$uid = intval($wiki['uid']);
 		$user_query = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
 		$user=$db->fetch_array($user_query);
 		$username_formatted = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
@@ -598,6 +604,7 @@ if($mybb->input['action']=="do_save_order") {
 		error($lang->wiki_oder_error);
 
 	foreach($mybb->input['disporder'] as $ID => $Sort) {
+		$ID = $db->escape_string($ID); $Sort = $db->escape_string($Sort);
 		$db->update_query($table, array("Sort"=>$Sort), "ID='{$ID}'");
 	}
 	if($table=="wiki_cats")
@@ -620,11 +627,8 @@ if($mybb->input['action']=="search") {
 	$query .= ')';
 
 	$resultQuery = $db->query($query);
-	echo $db->num_rows($resultQuery);
 	if($db->num_rows($resultQuery) < 1) {
-		echo "ok";
 		eval("\$searchResults = \"".$templates->get("wiki_search_results_no")."\";");
-		echo $searchResults;
 	} else {
 		while($result = $db->fetch_array($resultQuery)) {
        		if($result['link'])
@@ -632,7 +636,8 @@ if($mybb->input['action']=="search") {
 			else if($result['text'])
 				$result['title'] = '<a href="'.$settings['bburl'].'/'.wiki_get_article($result['id']).'">'.$result['title'].'</a>';
 
-			$catQuery = $db->simple_select("wiki_cats", "title", "id={$result['cid']}");
+			$result_cid = intval($result['cid']);
+			$catQuery = $db->simple_select("wiki_cats", "title", "id={$result_cid}");
 			$result['category'] = $db->fetch_field($catQuery, "title");
 			eval("\$searchResults .= \"".$templates->get("wiki_search_results_table")."\";");
 		}
@@ -722,7 +727,7 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 				eval("\$unlock = \"".$templates->get("wiki_panel_unlock")."\";");
 		}
 
-		$cid=$wiki['cid'];
+		$cid=intval($wiki['cid']);
      	if(wiki_user_in_group($mybb->user, $allowed)) {
 //     	if($PL->is_member($allowed)) {
 			if(!$wiki['is_closed'])
@@ -749,7 +754,7 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 		$query = $db->simple_select("wiki_cats", "id, title, Sort", "", array("order_by"=>"Sort"));
 		$wiki_table="";
 		while($t=$db->fetch_array($query)) {
-			$cid=$t['id'];
+			$cid=intval($t['id']);
 			$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 			$category_number = $db->num_rows($db->simple_select("wiki", "id", "cid='{$cid}'"));
 			if(wiki_user_in_group($mybb->user, $allowed)) {
@@ -765,14 +770,16 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 			$trash_query=$db->simple_select("wiki_trash", "*", "", array("limit"=>"5", "order_by"=>"date", "order_dir"=>"desc"));
 			while($entry=$db->fetch_array($trash_query)) {
 				$trash=@unserialize($entry['entry']);
-				$query=$db->simple_select("wiki_cats", "title AS category", "id='".$trash['cid']."'");
+				$trash_cid = intval($trash['cid']);
+				$query=$db->simple_select("wiki_cats", "title AS category", "id='{$trash_cid}'");
 				$trash_cat = $db->fetch_array($query);
 				if($trash_cat&&$trash_cat!="")
 					$trash=array_merge($trash, $trash_cat);
 				else
 					$trash['category'] = $lang->wiki_trash_unknown_cat;
 				$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);
-				$query=$db->simple_select("users", "username AS deletedfrom", "uid='".$entry['from']."'");
+				$entry_from = intval($entry['from']);
+				$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 				$trash=array_merge($trash, $db->fetch_array($query));
 				$trash['id']=$entry['id'];
 				eval("\$wiki_trash_table .= \"".$templates->get("wiki_trash_table_element")."\";");
