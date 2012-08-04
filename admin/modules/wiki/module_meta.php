@@ -16,9 +16,10 @@ function wiki_meta()
 	$sub_menu = array();
 	$sub_menu['5'] = array("id" => "index", "title" => $lang->wiki_index, "link" => "index.php?module=wiki");
 	$sub_menu['10'] = array("id" => "article", "title" => $lang->wiki_article, "link" => "index.php?module=wiki-article");
-	$sub_menu['15'] = array("id" => "option", "title" => $lang->wiki_option, "link" => "index.php?module=config-settings&action=change&gid=".$g['gid']);
-	$sub_menu['20'] = array("id" => "import", "title" => $lang->wiki_import, "link" => "index.php?module=wiki-import");
-	$sub_menu['25'] = array("id" => "update", "title" => $lang->wiki_update, "link" => "index.php?module=wiki-update");
+	$sub_menu['15'] = array("id" => "permissions", "title" => $lang->wiki_permissions, "link" => "index.php?module=wiki-permissions");
+	$sub_menu['20'] = array("id" => "option", "title" => $lang->wiki_option, "link" => "index.php?module=config-settings&action=change&gid=".$g['gid']);
+	$sub_menu['25'] = array("id" => "import", "title" => $lang->wiki_import, "link" => "index.php?module=wiki-import");
+	$sub_menu['30'] = array("id" => "update", "title" => $lang->wiki_update, "link" => "index.php?module=wiki-update");
 	
 	$query = $db->simple_select("settinggroups", "gid", "name='Wiki'");
 	if($db->num_rows($query))
@@ -35,6 +36,7 @@ function wiki_action_handler($action)
 	$actions = array(
 		'index' => array('active' => 'index', 'file' => 'home.php'),
 		'article' => array('active' => 'article', 'file' => 'article.php'),
+		'permissions' => array('active' => 'permissions', 'file' => 'permissions.php'),
 		'import' => array('active' => 'import', 'file' => 'import.php'),
 		'update' => array('active' => 'update', 'file' => 'update.php')
 	);
@@ -56,14 +58,14 @@ function postinpoints_admin_permissions()
 	global $lang;
 	
 	$admin_permissions = array(
-		"index"	=> $lang->wiki_permissions_index,
-		"article"	=> $lang->wiki_permissions_article,
-		"import"	=> $lang->wiki_permissions_import,
-		"update"	=> $lang->wiki_permissions_update
+		"index"	=> $lang->wiki_permission_index,
+		"article"	=> $lang->wiki_permission_article,
+		"permissions"	=> $lang->wiki_permission_permissions,
+		"import"	=> $lang->wiki_permission_import,
+		"update"	=> $lang->wiki_permission_update
 	);
 	
 	require_once MYBB_ROOT."inc/plugins/wiki.php";
-	if(wiki_is_installed())
-		return array("name" => "wiki", "permissions" => $admin_permissions, "disporder" => 70);
+	return array("name" => "wiki", "permissions" => $admin_permissions, "disporder" => 70);
 }
 ?>

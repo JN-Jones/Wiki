@@ -3,27 +3,25 @@ define("IN_MYBB", 1);
 define("THIS_SCRIPT", "wiki.php");
 
 $templatelist = "wiki,wiki_table,wiki_category,wiki_category_table,wiki_text,wiki_header,wiki_header_edit,wiki_header_hidden";
-$templatelist .= "wiki_panel,wiki_panel_category,wiki_panel_text,wiki_panel_versions,wiki_panel_unlock";
-$templatelist .= "wiki_add,wiki_edit,wiki_delete,wiki_category_add,wiki_category_edit,wiki_category_delete";
-$templatelist .= "wiki_trash,wiki_trash_table,wiki_trash_table_element,wiki_versions,wiki_versions_table, wiki_new, wiki_new_element, wiki_copy";
-$templatelist .= "wiki_search";
+$templatelist .= ",wiki_panel,wiki_panel_category,wiki_panel_text,wiki_panel_versions,wiki_panel_unlock";
+$templatelist .= ",wiki_add,wiki_edit,wiki_delete,wiki_category_add,wiki_category_edit,wiki_category_delete";
+$templatelist .= ",wiki_trash,wiki_trash_table,wiki_trash_table_element,wiki_versions,wiki_versions_table, wiki_new, wiki_new_element";
+$templatelist .= ",wiki_search,wiki_sort,wiki_control,wiki_table_sort,wiki_table_control,wiki_category_sort,wiki_category_control";
+$templatelist .= ",wiki_category_table_sort,wiki_category_table_control,wiki_trash_table_restore,wiki_trash_table_delete";
+$templatelist .= ",wiki_trash_table_element_restore,wiki_trash_table_element_delete,wiki_versions_restore,wiki_versions_delete";
+$templatelist .= ",wiki_versions_table_restore,wiki_versions_table_delete";
 
 require("global.php");
 $PL or require_once PLUGINLIBRARY;
 
 add_breadcrumb($lang->wiki, $wiki_link);
 
-$allowed = explode(",", $mybb->settings['wiki_allowedgroups']);
-if(!wiki_user_in_group($mybb->user, $allowed))
-//if(!$PL->is_member($allowed))
+if(!wiki_is_allowed("can_view"))
     error_no_permission();
 
-$allowed = explode(",", $mybb->settings['wiki_write_allowedgroups']);
-$allowedmod = explode(",", $mybb->settings['wiki_mod_allowedgroups']);
 
 if($mybb->input['action']=="do_article_add" && $mybb->request_method == "post") {
-    if(!wiki_user_in_group($mybb->user, $allowed))
-//    if(!$PL->is_member($allowed))
+    if(!wiki_is_allowed("can_create"))
 	    error_no_permission();
 
 	// Verify incoming POST request
@@ -50,8 +48,7 @@ if($mybb->input['action']=="do_article_add" && $mybb->request_method == "post") 
 
 	if(!$errors) {
 		$moderate=false;
-		if($mybb->settings['wiki_moderate_new']&&!wiki_user_in_group($mybb->user, $allowedmod))
-//		if($mybb->settings['wiki_moderate_new']&&!$PL->is_member($allowedmod))
+		if($mybb->settings['wiki_moderate_new'] && !wiki_is_allowed("can_unlock"))
 		    $moderate=true;
 		$insert_array = array(
 			'cid' => $db->escape_string($mybb->input['wiki_cat']),
@@ -82,11 +79,9 @@ if($mybb->input['action']=="article_add") {
 	// Make navigation
 	add_breadcrumb($lang->wiki_nav_add, "wiki.php?action=article_add");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_create"))
 		error_no_permission();
-	}
+
 
 	// Coming back to this page from an error?
 	if($errors)
@@ -117,6 +112,9 @@ if($mybb->input['action']=="article_add") {
 }
 if($mybb->input['action'] == "do_article_edit" && $mybb->request_method == "post")
 {
+	if(!wiki_is_allowed("can_edit"))
+	    error_no_permission();
+	
 	verify_post_check($mybb->input['my_post_key']);
 
 	$wid = intval($mybb->input['wid']);
@@ -172,11 +170,8 @@ if($mybb->input['action']=="article_edit") {
 	// Make navigation
 	add_breadcrumb($lang->wiki_nav_edit, "wiki.php?action=article_edit");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
-	}
 
 	$wiki_id = intval($mybb->input['wid']);
 	$query = $db->simple_select("wiki", "id, uid, cid, title, link, short, text, is_hidden, is_closed", "id='{$wiki_id}'");
@@ -205,8 +200,7 @@ if($mybb->input['action']=="article_edit") {
    	if($wiki['is_hidden'])
 	    $hidden_checked="checked=\"checked\" ";
    	if($wiki['is_closed']) {
-	    if($wiki['uid']==$mybb->user['uid']||wiki_user_in_group($mybb->user, $allowedmod))
-//	    if($wiki['uid']==$mybb->user['uid']||$PL->is_member($allowedmod))
+	    if($wiki['uid']==$mybb->user['uid'] || wiki_is_allowed("can_edit_closed"))
 		    $closed_checked="checked=\"checked\" ";
 		else
 			error($lang->wiki_closed);
@@ -216,6 +210,9 @@ if($mybb->input['action']=="article_edit") {
 }
 if($mybb->input['action'] == "do_article_delete" && $mybb->request_method == "post")
 {
+	if(!wiki_is_allowed("can_edit"))
+	    error_no_permission();
+
 	verify_post_check($mybb->input['my_post_key']);
 
 	$wid = intval($mybb->input['wid']);
@@ -244,18 +241,14 @@ if($mybb->input['action']=="article_delete") {
 	// Make navigation
 	add_breadcrumb($lang->wiki_nav_delete, "wiki.php?action=article_delete");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
-	}
 
 	$wiki_id = intval($mybb->input['wid']);
 	$query = $db->simple_select("wiki", "id, title, is_closed", "id='{$wiki_id}'");
 	$wiki = $db->fetch_array($query);
    	if($wiki['is_closed']) {
-	    if($wiki['uid']!=$mybb->user['uid']&&!wiki_user_in_group($mybb->user, $allowedmod))
-//	    if($wiki['uid']!=$mybb->user['uid']&&!$PL->is_member($allowedmod))
+	    if($wiki['uid'] != $mybb->user['uid'] && !wiki_is_allowed("can_edit_closed"))
 			error($lang->wiki_closed);
 	}
 	eval("\$wiki_delete = \"".$templates->get("wiki_delete")."\";");
@@ -263,6 +256,9 @@ if($mybb->input['action']=="article_delete") {
 }
 /**/
 if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post") {
+	if(!wiki_is_allowed("can_create"))
+	    error_no_permission();
+
 	// Verify incoming POST request
 	verify_post_check($mybb->input['my_post_key']);
 	if(!$mybb->input['wiki_name'])
@@ -285,11 +281,8 @@ if($mybb->input['action']=="category_add") {
 	// Make navigation
 	add_breadcrumb($lang->wiki_nav_category_add, "wiki.php?action=wiki_category_add");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_create"))
 		error_no_permission();
-	}
 
 	// Coming back to this page from an error?
 	if($errors)
@@ -299,8 +292,10 @@ if($mybb->input['action']=="category_add") {
 	eval("\$wiki_category_add = \"".$templates->get("wiki_category_add")."\";");
 	output_page($wiki_category_add);
 }
-if($mybb->input['action'] == "do_category_edit" && $mybb->request_method == "post")
-{
+if($mybb->input['action'] == "do_category_edit" && $mybb->request_method == "post") {
+	if(!wiki_is_allowed("can_edit"))
+	    error_no_permission();
+	
 	verify_post_check($mybb->input['my_post_key']);
 
 	$cid = intval($mybb->input['cid']);
@@ -326,11 +321,8 @@ if($mybb->input['action']=="category_edit") {
 	// Make navigation
 	add_breadcrumb($lang->wiki_nav_edit, "wiki.php?action=category_edit");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
-	}
 
 	$wiki_id = intval($mybb->input['cid']);
 	$query = $db->simple_select("wiki_cats", "id, title", "id='{$wiki_id}'");
@@ -343,8 +335,10 @@ if($mybb->input['action']=="category_edit") {
 	eval("\$wiki_category_edit = \"".$templates->get("wiki_category_edit")."\";");
 	output_page($wiki_category_edit);
 }
-if($mybb->input['action'] == "do_category_delete" && $mybb->request_method == "post")
-{
+if($mybb->input['action'] == "do_category_delete" && $mybb->request_method == "post") {
+	if(!wiki_is_allowed("can_edit"))
+	    error_no_permission();
+
 	verify_post_check($mybb->input['my_post_key']);
 
 	$cid = intval($mybb->input['cid']);
@@ -366,11 +360,8 @@ if($mybb->input['action'] == "do_category_delete" && $mybb->request_method == "p
 if($mybb->input['action']=="category_delete") {
 	add_breadcrumb($lang->wiki_nav_category_delete, "wiki.php?action=category_delete");
 
-	if(!wiki_user_in_group($mybb->user, $allowed))
-//	if(!$PL->is_member($allowed))
-	{
+	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
-	}
 
 	$wiki_id = intval($mybb->input['cid']);
 	$query = $db->simple_select("wiki_cats", "id, title", "id='{$wiki_id}'");
@@ -379,9 +370,9 @@ if($mybb->input['action']=="category_delete") {
 	output_page($wiki_category_delete);
 }
 if($mybb->input['action']=="restore") {
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+	if(!wiki_is_allowed("can_trash_restore"))
 	    error_no_permission();
+
 	$wid = intval($mybb->input['wid']);
 	$trash_query=$db->simple_select("wiki_trash", "entry", "id='{$wid}'");
 	$entry=$db->fetch_array($trash_query);
@@ -400,9 +391,9 @@ if($mybb->input['action']=="restore") {
 		$mybb->input['action']="trash";
 }
 if($mybb->input['action']=="trash_delete") {
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+	if(!wiki_is_allowed("can_trash_delete"))
 	    error_no_permission();
+
 	$wid = intval($mybb->input['wid']);
 	$trash_query=$db->simple_select("wiki_trash", "id, entry", "id='{$wid}'");
 	$entry=$db->fetch_array($trash_query);
@@ -419,8 +410,8 @@ if($mybb->input['action']=="trash_delete") {
 }
 if($mybb->input['action']=="trash") {
 	add_breadcrumb($lang->wiki_trash, WIKI_TRASH);
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+
+	if(!wiki_is_allowed("can_trash_view"))
 	    error_no_permission();
 
 	$trash_query=$db->simple_select("wiki_trash", "*", "", array("order_by"=>"date", "order_dir"=>"desc"));
@@ -435,17 +426,30 @@ if($mybb->input['action']=="trash") {
 		$trash=array_merge($trash, $db->fetch_array($query));
 		$trash['id']=$entry['id'];
 		$wiki_trash = WIKI_TRASH;
+		
+		if(wiki_is_allowed("can_trash_restore"))
+		    eval("\$restore = \"".$templates->get("wiki_trash_table_element_restore")."\";");
+		if(wiki_is_allowed("can_trash_delete"))
+		    eval("\$delete = \"".$templates->get("wiki_trash_table_element_delete")."\";");
+		
 		eval("\$wiki_trash_table .= \"".$templates->get("wiki_trash_table_element")."\";");
 	}
+
+    if(wiki_is_allowed("can_trash_restore"))
+	    eval("\$restore = \"".$templates->get("wiki_trash_table_restore")."\";");
+	if(wiki_is_allowed("can_trash_delete"))
+	    eval("\$delete = \"".$templates->get("wiki_trash_table_delete")."\";");
+
 	eval("\$wiki_trash_table= \"".$templates->get("wiki_trash_table")."\";");
 	if($errors)
-	{
 		$errors = inline_error($errors);
-	}
 	eval("\$wiki_trash= \"".$templates->get("wiki_trash")."\";");
 	output_page($wiki_trash);
 }
 if($mybb->input['action']=="restore_version") {
+	if(!wiki_is_allowed("can_version_restore"))
+	    error_no_permission();
+    
 	if(!isset($mybb->input['vid']))
 	    error($lang->wiki_invalid_id);
 	$vid=intval($mybb->input['vid']);
@@ -467,9 +471,9 @@ if($mybb->input['action']=="restore_version") {
 	redirect(wiki_get_article($awiki['id']), $lang->redirect_wiki_restore_version);
 }
 if($mybb->input['action']=="delete_version") {
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+	if(!wiki_is_allowed("can_version_delete"))
 	    error_no_permission();
+
 	$vid = intval($mybb->input['vid']);
 	$delete_query=$db->simple_select("wiki_versions", "id, wid, entry", "id='{$vid}'");
 	$entry=$db->fetch_array($delete_query);
@@ -485,6 +489,9 @@ if($mybb->input['action']=="delete_version") {
 		$mybb->input['action']="versions";
 }
 if($mybb->input['action']=="show_version") {
+	if(!wiki_is_allowed("can_version_view"))
+	    error_no_permission();
+
 	if(!isset($mybb->input['vid']))
 	    error($lang->wiki_invalid_id);
 	require_once MYBB_ROOT."inc/class_parser.php";
@@ -525,6 +532,9 @@ if($mybb->input['action']=="show_version") {
 	output_page($showversion);
 }
 if($mybb->input['action']=="versions") {
+	if(!wiki_is_allowed("can_version_view"))
+	    error_no_permission();
+
 	if(!isset($mybb->input['wid']))
 	    error($lang->wiki_invalid_id);
 	$wid=intval($mybb->input['wid']);
@@ -558,8 +568,18 @@ if($mybb->input['action']=="versions") {
 		$user['username_formatted'] = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
 		$wiki['user'] = build_profile_link($user['username_formatted'], $user['uid']);
 		$wiki_version = wiki_get_version($vid);
+		
+		if(wiki_is_allowed("can_version_restore"))
+			eval("\$restore = \"".$templates->get("wiki_versions_table_restore")."\";");
+		if(wiki_is_allowed("can_version_delete"))
+			eval("\$delete = \"".$templates->get("wiki_versions_table_delete")."\";");
+		
 		eval("\$wiki_table .= \"".$templates->get("wiki_versions_table")."\";");
 	}
+	if(wiki_is_allowed("can_version_restore"))
+		eval("\$restore = \"".$templates->get("wiki_versions_restore")."\";");
+	if(wiki_is_allowed("can_version_delete"))
+		eval("\$delete = \"".$templates->get("wiki_versions_delete")."\";");
 	eval("\$wiki_versions = \"".$templates->get("wiki_versions")."\";");
 	output_page($wiki_versions);
 }
@@ -567,9 +587,10 @@ if($mybb->input['action']=="unlock") {
 	if(!isset($mybb->input['wid']))
 	    error($lang->wiki_invalid_id);
 	$wid=intval($mybb->input['wid']);
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+	
+	if(!wiki_is_allowed("can_edit_closed"))
 	    error_no_permission();
+
 	$db->update_query('wiki', array('awaiting_moderation'=>'0'), "id='{$wid}'");
 
 	log_moderator_action("", $lang->wiki_log_unlock.": ".$wiki['title']);
@@ -593,10 +614,10 @@ if($mybb->input['action']=="new") {
 	output_page($wiki_new);
 }
 if($mybb->input['action']=="do_save_order") {
-	if(!wiki_user_in_group($mybb->user, $allowedmod))
-//	if(!$PL->is_member($allowedmod))
+	if(!wiki_is_allowed("can_edit_sort"))
 	    error_no_permission();
-	if($mybb->input['order']=="article")
+
+    if($mybb->input['order']=="article")
 	    $table = "wiki";
 	elseif($mybb->input['order']=="category")
 	    $table = "wiki_cats";
@@ -613,6 +634,9 @@ if($mybb->input['action']=="do_save_order") {
 		redirect(wiki_get_category($mybb->input['cat']), $lang->redirect_wiki_order);
 }
 if($mybb->input['action']=="search") {
+	if(!wiki_is_allowed("can_search"))
+	    error_no_permission();
+
 	add_breadcrumb($lang->search, "wiki.php?action=search");
 	$type = isset($mybb->input['type']) ? $mybb->input['type'] : 'full';
 
@@ -653,17 +677,18 @@ if($mybb->input['action']=="search") {
 	eval("\$searchOutput = \"".$templates->get("wiki_search_results")."\";");
 	output_page($searchOutput);
 }
-if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
-	if(isset($mybb->input['cid'])&&$mybb->input['cid']!="") {
+if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
+	if(isset($mybb->input['cid']) && $mybb->input['cid']!="") {
 		$wiki_cid=intval($mybb->input['cid']);
 		$test = $db->simple_select("wiki_cats", "id, title", "id='{$wiki_cid}'");
 		$category=$db->fetch_array($test);
 		add_breadcrumb($category['title'], wiki_get_category($category['id']));
-		if(wiki_user_in_group($mybb->user, $allowedmod))
-//		if($PL->is_member($allowedmod))
+
+		if(wiki_is_allowed("can_unlock"))
 			$query = $db->simple_select("wiki", "id, uid, is_hidden, is_closed, link, title, short, text, awaiting_moderation AS moderate, Sort", "cid='$wiki_cid'", array("order_by"=>"Sort"));
 		else
 			$query = $db->simple_select("wiki", "id, uid, is_hidden, is_closed, link, title, short, text, awaiting_moderation AS moderate, Sort", "cid='$wiki_cid' AND awaiting_moderation='false'", array("order_by"=>"Sort"));
+
 		$wiki_table="";
 		while($wiki=$db->fetch_array($query)) {
     		if($wiki['link'])
@@ -676,22 +701,36 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 			$wiki_short = $wiki['short'];
 	  		if($wiki['moderate'])
 			    $background="#6EFF6E";
-			if(wiki_user_in_group($mybb->user, $allowed)) {
-		//	if($PL->is_member($allowed)) {
-				eval("\$additional = \"".$templates->get("wiki_category_table_mod")."\";");
-			}
-       		if(!$wiki['is_hidden']||($wiki['uid']==$mybb->user['uid']||$mybb->usergroup['cancp']||$mybb->user['ismoderator']))
+
+			if(wiki_is_allowed("can_edit_sort"))
+				eval("\$additional['sort'] = \"".$templates->get("wiki_category_table_sort")."\";");
+			
+			if(wiki_is_allowed("can_edit"))
+				eval("\$additional['control'] = \"".$templates->get("wiki_category_table_control")."\";");
+
+       		if(!$wiki['is_hidden'] || wiki_is_allowed("can_view_hidden") || $wiki['uid'] == $mybb->user['uid'])
 				eval("\$wiki_table .= \"".$templates->get("wiki_category_table")."\";");
 		}
 
-		if(wiki_user_in_group($mybb->user, $allowed)) {
-//		if($PL->is_member($allowed)) {
+		if(wiki_is_allowed("can_create"))
+		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
+		if(wiki_is_allowed("can_edit")) {
+			if(isset($article_add))
+			    $article_add .= " | ";
+		    $article_edit = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_edit&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_category_edit}\">{$lang->wiki_nav_category_edit}</a> | ";
+			$article_delete = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_delete&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_category_delete}\">{$lang->wiki_nav_category_delete}</a>";
+			eval("\$additional['control'] = \"".$templates->get("wiki_category_control")."\";");
+		}
+		
+		if(isset($article_add) || isset($article_edit))
 			eval("\$wiki_header = \"".$templates->get("wiki_panel_category")."\";");
+
+		if(wiki_is_allowed("can_edit_sort")) {
 			$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
-			eval("\$additional = \"".$templates->get("wiki_category_mod")."\";");
+			eval("\$additional['sort'] = \"".$templates->get("wiki_category_sort")."\";");
 		}
 		eval("\$showwiki = \"".$templates->get("wiki_category")."\";");
-	}elseif(isset($mybb->input['wid'])&&$mybb->input['wid']!="") {
+	}elseif(isset($mybb->input['wid']) && $mybb->input['wid']!="") {
 		require_once MYBB_ROOT."inc/class_parser.php";
 		$parser = new postParser;
 		$parser_options = array(
@@ -705,40 +744,44 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 		$id = intval($mybb->input['wid']);
 		$query = $db->simple_select("wiki", "id, cid, title, link, text, uid, username, date, is_hidden, is_closed, awaiting_moderation", "id='{$id}'");
 		$wiki=$db->fetch_array($query);
-		if($wiki['awaiting_moderation']&&!wiki_user_in_group($mybb->user, $allowedmod))
-//		if($wiki['awaiting_moderation']&&!$PL->is_member($allowedmod))
+
+   		if($wiki['awaiting_moderation'] && !wiki_is_allowed("can_unlock"))
 		    error_no_permission();
+
 		if($wiki['is_hidden']) {
-		    if($wiki['uid']==$mybb->user['uid']||wiki_user_in_group($mybb->user, $allowedmod))
-//		    if($wiki['uid']==$mybb->user['uid']||$PL->is_member($allowedmod))
+		    if($wiki['uid']==$mybb->user['uid'] || wiki_is_allowed("can_view_hidden"))
 				eval("\$wiki['hidden'] = \"".$templates->get("wiki_header_hidden")."\";");
 			else
 				error($lang->wiki_hidden);
 		}
 
-     	if(wiki_user_in_group($mybb->user, $allowedmod)) {
-//     	if($PL->is_member($allowedmod)) {
+     	if(wiki_is_allowed("can_version_view")) {
 			$query = $db->simple_select("wiki_versions", "*", "wid='{$id}'");
 			$vnumber=$db->num_rows($query);
 			$wiki_versions = wiki_get_versions($id);
 			if($vnumber!=0)
 				eval("\$versions = \"".$templates->get("wiki_panel_versions")."\";");
-			if($wiki['awaiting_moderation'])
-				eval("\$unlock = \"".$templates->get("wiki_panel_unlock")."\";");
 		}
+		
+		if($wiki['awaiting_moderation'])
+			eval("\$unlock = \"".$templates->get("wiki_panel_unlock")."\";");
 
 		$cid=intval($wiki['cid']);
-     	if(wiki_user_in_group($mybb->user, $allowed)) {
-//     	if($PL->is_member($allowed)) {
-			if(!$wiki['is_closed'])
-				eval("\$wiki_header = \"".$templates->get("wiki_panel_text")."\";");
-			else {
-			    if($wiki['uid']==$mybb->user['uid']||wiki_user_in_group($mybb->user, $allowedmod))
-//			    if($wiki['uid']==$mybb->user['uid']||$PL->is_member($allowedmod))
-					eval("\$wiki_header = \"".$templates->get("wiki_panel_text")."\";");
+		if(wiki_is_allowed("can_create"))
+		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
+
+		if(wiki_is_allowed("can_edit")) {
+			if(!$wiki['is_closed'] || wiki_is_allowed("can_edit_closed") || $wiki['uid']==$mybb->user['uid']) {
+				if(isset($article_add))
+				    $article_add .= " | ";
+				$article_edit = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_edit&wid={$id}\" title=\"{$lang->wiki_nav_edit}\">{$lang->wiki_nav_edit}</a> | ";
+				$article_delete = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_delete&wid={$id}\" title=\"{$lang->wiki_nav_delete}\">{$lang->wiki_nav_delete}</a>";
 			}
 		}
-
+		
+		if(isset($article_add) || isset($article_edit) || isset($versions) || isset($unlock))
+		    eval("\$wiki_header = \"".$templates->get("wiki_panel_text")."\";");
+		
 		$wiki_title = $wiki['title'];
 		$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
 		$test = $db->simple_select("wiki_cats", "id, title", "id='{$cid}'");
@@ -757,16 +800,18 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 			$cid=intval($t['id']);
 			$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 			$category_number = $db->num_rows($db->simple_select("wiki", "id", "cid='{$cid}'"));
-			if(wiki_user_in_group($mybb->user, $allowed)) {
-		//	if($PL->is_member($allowed)) {
+			if(wiki_is_allowed("can_edit_sort")) {
 				$category_sort = $t['Sort'];
-				eval("\$additional = \"".$templates->get("wiki_table_mod")."\";");
+				eval("\$additional['sort'] = \"".$templates->get("wiki_table_sort")."\";");
 			}
+			
+			if(wiki_is_allowed("can_edit"))
+				eval("\$additional['control'] = \"".$templates->get("wiki_table_control")."\";");
+			    
 			eval("\$wiki_table .= \"".$templates->get("wiki_table")."\";");
 		}
 
-		if(wiki_user_in_group($mybb->user, $allowedmod)) {
-//		if($PL->is_member($allowedmod)) {
+		if(wiki_is_allowed("can_trash_view")) {
 			$trash_query=$db->simple_select("wiki_trash", "*", "", array("limit"=>"5", "order_by"=>"date", "order_dir"=>"desc"));
 			while($entry=$db->fetch_array($trash_query)) {
 				$trash=@unserialize($entry['entry']);
@@ -782,14 +827,23 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 				$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 				$trash=array_merge($trash, $db->fetch_array($query));
 				$trash['id']=$entry['id'];
+
+				if(wiki_is_allowed("can_trash_restore"))
+				    eval("\$restore = \"".$templates->get("wiki_trash_table_element_restore")."\";");
+				if(wiki_is_allowed("can_trash_delete"))
+				    eval("\$delete = \"".$templates->get("wiki_trash_table_element_delete")."\";");
+
 				eval("\$wiki_trash_table .= \"".$templates->get("wiki_trash_table_element")."\";");
 			}
+			if(wiki_is_allowed("can_trash_restore"))
+			    eval("\$restore = \"".$templates->get("wiki_trash_table_restore")."\";");
+			if(wiki_is_allowed("can_trash_delete"))
+			    eval("\$delete = \"".$templates->get("wiki_trash_table_delete")."\";");
 			$wiki_trash = WIKI_TRASH;
 			eval("\$wiki_trash= \"".$templates->get("wiki_trash_table")."\";");
 		}
 		$wiki_new = WIKI_NEW;
-		if(wiki_user_in_group($mybb->user, $allowed)) {
-//		if($PL->is_member($allowed)) {
+		if(wiki_is_allowed("can_search")) {
 			if($mybb->settings['wiki_stype']=="full") {
 			    $full_checked = "checked=\"checked\"";
 			    $title_checked = "";
@@ -798,10 +852,20 @@ if(!isset($mybb->input['action'])||$mybb->input['action']=="show") {
 			    $title_checked = "checked=\"checked\"";
 			}
 			eval("\$search = \"".$templates->get("wiki_search")."\";");
-			eval("\$wiki_header = \"".$templates->get("wiki_panel")."\";");
-			$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
-			eval("\$additional = \"".$templates->get("wiki_mod")."\";");
 		}
+		if(wiki_is_allowed("can_create"))
+		    $category_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_add\" title=\"{$lang->wiki_nav_category_add}\">{$lang->wiki_nav_category_add}</a>";
+
+		eval("\$wiki_header = \"".$templates->get("wiki_panel")."\";");
+		
+		if(wiki_is_allowed("can_edit_sort")) {
+			$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
+			eval("\$additional['sort'] = \"".$templates->get("wiki_sort")."\";");
+		}
+		
+		if(wiki_is_allowed("can_edit"))
+			eval("\$additional['control'] = \"".$templates->get("wiki_control")."\";");
+		    
 		eval("\$showwiki = \"".$templates->get("wiki")."\";");
 	}
 	output_page($showwiki);

@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.1.2",
+		"version"		=> "1.2 Beta 1",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -50,11 +50,69 @@ function wiki_install()
 	wiki_settings(true);
 	wiki_templates(trie);
 
-	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki` ( `id` int(11) NOT NULL AUTO_INCREMENT, `cid` int(11) NOT NULL, `title` varchar(50) DEFAULT NULL, `link` varchar(100) DEFAULT NULL, `short` varchar(200) DEFAULT NULL, `text` text, `uid` int(10), `username` varchar(80), `date` bigint(30), `is_hidden` boolean, `is_closed` boolean, `awaiting_moderation` boolean, `Sort` int NOT NULL default '0', PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1");
-	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_cats` ( `id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(50) DEFAULT NULL, `Sort` int NOT NULL default '0', PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
-	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_trash` ( `id` int(11) NOT NULL AUTO_INCREMENT, `entry` text, `from` int(10) NOT NULL, `date` bigint(30) NOT NULL, PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
-	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_versions` ( `id` int(11) NOT NULL AUTO_INCREMENT, `wid` int(11) NOT NULL, `entry` text, PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki` (
+				`id` int(11) NOT NULL AUTO_INCREMENT,
+				`cid` int(11) NOT NULL,
+				`title` varchar(50) DEFAULT NULL,
+				`link` varchar(100) DEFAULT NULL,
+				`short` varchar(200) DEFAULT NULL,
+				`text` text, `uid` int(10),
+				`username` varchar(80),
+				`date` bigint(30),
+				`is_hidden` boolean,
+				`is_closed` boolean,
+				`awaiting_moderation` boolean,
+				`Sort` int NOT NULL default '0',
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1");
 
+	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_cats` (
+				`id` int(11) NOT NULL AUTO_INCREMENT,
+				`title` varchar(50) DEFAULT NULL,
+				`Sort` int NOT NULL default '0',
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+
+	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_trash` (
+				`id` int(11) NOT NULL AUTO_INCREMENT,
+				`entry` text, `from` int(10) NOT NULL,
+				`date` bigint(30) NOT NULL,
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+
+	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_versions` (
+				`id` int(11) NOT NULL AUTO_INCREMENT,
+				`wid` int(11) NOT NULL,
+				`entry` text,
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+
+	$db->query('CREATE TABLE '.TABLE_PREFIX.'wiki_permissions (
+		gid int(11) NOT NULL PRIMARY KEY,
+		can_view boolean NOT NULL DEFAULT 1,
+		can_create boolean NOT NULL DEFAULT 1,
+		can_edit boolean NOT NULL DEFAULT 0,
+		can_search boolean NOT NULL DEFAULT 1,
+		can_version_view boolean NOT NULL DEFAULT 0,
+		can_version_restore boolean NOT NULL DEFAULT 0,
+		can_version_delete boolean NOT NULL DEFAULT 0,
+		can_trash_view boolean NOT NULL DEFAULT 0,
+		can_trash_restore boolean NOT NULL DEFAULT 0,
+		can_trash_delete boolean NOT NULL DEFAULT 0,
+		can_edit_closed boolean NOT NULL DEFAULT 0,
+		can_view_hidden boolean NOT NULL DEFAULT 0,
+		can_edit_sort boolean NOT NULL DEFAULT 0,
+		can_unlock boolean NOT NULL DEFAULT 0
+	)');
+
+	$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
+			(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort)
+		VALUES
+			(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+		');	
+	
 	$PL->cache_update("wiki_version", $plugininfo['version']);
 	$PL->cache_update("wiki_pl_version", "8");
 }
@@ -261,28 +319,19 @@ function wiki_autolink($message)
 }
 
 
-function wiki_user_in_group($user, $allowedgroups)
+function wiki_is_allowed($action)
 {
-	if(sizeof($allowedgroups)==1 && $allowedgroups[0]==0)
-	    return true;
-	$groups = array();
-	$agroups = explode(',', $user['additionalgroups']);
-	array_push($groups, $user['usergroup']);
-	for($i=0; $i<sizeof($agroups); $i++) {
-		array_push($groups, $agroups[$i]);
-	}
-	$in = false;
-	foreach ($groups as $group) {
-		if(in_array($group, $allowedgroups)) {
-		   $in = true;
-		}
-	}
-	return $in;
+	global $mybb;
+
+	if(isset($mybb->user['wiki_permissions'][$action]))
+		return $mybb->user['wiki_permissions'][$action];
+
+	return false;
 }
 
 function wiki_init()
 {
-	global $lang, $wiki_copyright, $mybb, $templates, $wiki_link;
+	global $lang, $wiki_copyright, $mybb, $templates, $wiki_link, $db;
 	$lang->load("wiki");
 	if($mybb->settings['wiki_copy'])
 		eval("\$wiki_copyright = \"".$templates->get("wiki_copy")."\";");
@@ -306,6 +355,32 @@ function wiki_init()
 		define('WIKI_NEW', "wiki.php?action=new");
 	}
 	$wiki_link = WIKI;
+
+
+	$groups = explode(",", $mybb->user['additionalgroups']);
+	if($mybb->user['additionalgroups'] == "")
+	    $groups = array();
+	$groups[] = $mybb->user['usergroup'];
+
+	$resultSet = $db->query('SELECT * FROM '.TABLE_PREFIX.'wiki_permissions WHERE gid IN ('.implode(',', $groups).')');
+
+	$permissions = array();
+
+	while($row = $db->fetch_array($resultSet))
+	{
+		foreach($row as $key => $value)
+		{
+			if($key == 'gid')
+				continue;
+
+			$value = (bool)$value;
+
+			if($value)
+				$permissions[$key] = $value;
+		}
+	}
+
+	$mybb->user['wiki_permissions'] = $permissions;
 }
 
 function wiki_get_category($cid)
@@ -460,15 +535,9 @@ function createHeader($user, $wiki, $showbuttons=true)
 			eval("\$user['onlinestatus'] = \"".$templates->get("postbit_offline")."\";");
 		}
 	}
-	if(wiki_user_in_group($mybb->user, $allowed) && $showbuttons) {
-//	if($PL->is_member($allowed) && $showbuttons) {
-			if(!$wiki['is_closed'])
-				eval("\$user['edit'] = \"".$templates->get("wiki_header_edit")."\";");
-			else {
-			    if($wiki['uid']==$mybb->user['uid']||wiki_user_in_group($mybb->user, $allowedmod))
-//			    if($wiki['uid']==$mybb->user['uid']||$PL->is_member($allowedmod))
-					eval("\$user['edit'] = \"".$templates->get("wiki_header_edit")."\";");
-			}
+	if($showbuttons && wiki_is_allowed("can_edit")) {
+		if(!$wiki['is_closed'] || wiki_is_allowed("can_edit_closed") || $wiki['uid']==$mybb->user['uid'])
+			eval("\$user['edit'] = \"".$templates->get("wiki_header_edit")."\";");
 	}
 	eval("\$user_header = \"".$templates->get("wiki_header")."\";");
 	return $user_header;
@@ -483,6 +552,40 @@ function wiki_update($installed, $uploaded)
 		$db->add_column('wiki', 'Sort', "int NOT NULL default '0'");
 		$db->add_column('wiki_cats', 'Sort', "int NOT NULL default '0'");
 	}
+	if(version_compare($installed, "1.2 Beta 1 Dev 1", "<")) {
+		$db->query('CREATE TABLE '.TABLE_PREFIX.'wiki_permissions (
+			gid int(11) NOT NULL PRIMARY KEY,
+			can_view boolean NOT NULL DEFAULT 1,
+			can_create boolean NOT NULL DEFAULT 1,
+			can_edit boolean NOT NULL DEFAULT 0,
+			can_search boolean NOT NULL DEFAULT 1,
+			can_version_view boolean NOT NULL DEFAULT 0,
+			can_version_restore boolean NOT NULL DEFAULT 0,
+			can_version_delete boolean NOT NULL DEFAULT 0,
+			can_trash_view boolean NOT NULL DEFAULT 0,
+			can_trash_restore boolean NOT NULL DEFAULT 0,
+			can_trash_delete boolean NOT NULL DEFAULT 0,
+			can_edit_closed boolean NOT NULL DEFAULT 0,
+			can_view_hidden boolean NOT NULL DEFAULT 0,
+			can_edit_sort boolean NOT NULL DEFAULT 0
+		)');
+	
+		$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
+				(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort)
+			VALUES
+				(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+				(2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+				(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+				(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+				(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+				(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+				(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+			');
+	}
+	if(version_compare($installed, "1.2 Beta 1 Dev 2", "<")) {
+	    $db->add_column('wiki_permissions', 'can_unlock', "boolean NOT NULL DEFAULT '0'");
+		$db->update_query("wiki_permissions", array("can_unlock" => 1), "gid='3' OR gid='4' OR gid='6'");
+	}
 }
 
 function wiki_settings($install=false)
@@ -492,24 +595,6 @@ function wiki_settings($install=false)
 	  	"Wiki",
 	  	"Settings for the \"Wiki\" Plugin",
 	  	array(
-	      	"allowedgroups" => array(
-	          	"title" => "Allowed Usergroups",
-	          	"description" => "The Groups which can visit the wiki. Choose 0 for every Group. Seperate groups with ,",
-		        "optionscode" => "text",
-		        "value" => "0",
-	          ),
-	      	"write_allowedgroups" => array(
-	          	"title" => "Allowed Manager Groups",
-	          	"description" => "The Groups which can add/change/delete the wiki entries. Choose 0 for every group. Seperate groups with ,",
-		        "optionscode" => "text",
-		        "value" => "2,3,4,5,6",
-	          ),
-	      	"mod_allowedgroups" => array(
-	          	"title" => "Allowed Moderator Groups",
-	          	"description" => "The Groups which manage the Trash and Version History. Choose 0 for every group. Seperate groups with ,",
-		        "optionscode" => "text",
-		        "value" => "3,4,6",
-	          ),
 	      	"moderate_new" => array(
 	          	"title" => "Moderate new entrys?",
 	          	"description" => "",
@@ -562,6 +647,15 @@ function wiki_templates($install=false)
 <head>
 	<title>{\$settings['bbname']} - {\$lang->wiki}</title>
 	{\$headerinclude}
+	<style type=\"text/css\">
+	.wiki_panel {
+		background: #efefef;
+		color: #000000;
+		font-size: 11px;
+		border: 1px solid #D4D4D4;
+		padding: 8px;
+	}
+	</style>
 </head>
 <body>
 {\$header}
@@ -582,7 +676,8 @@ function wiki_templates($install=false)
 		<td class=\"tcat\" width=\"45%\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_number}</strong></span>
 		</td>
-		{\$additional}
+		{\$additional['sort']}
+		{\$additional['control']}
 	</tr>
 	{\$wiki_table}
 </table>
@@ -593,10 +688,11 @@ function wiki_templates($install=false)
 </body>
 </html>",
 				/* Zusätzliche Spalten für Moderatoren */
-					   "mod" => "
+					   "sort" => "
 		<td class=\"tcat\" width=\"5%\" >
 			<span class=\"smalltext\"><strong>{\$lang->order}</strong></span>
-		</td>
+		</td>",
+						"control" => "
 		<td class=\"tcat\" width=\"5%\" colspan=\"2\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_control}</strong></span>
 		</td>",
@@ -609,13 +705,15 @@ function wiki_templates($install=false)
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><strong>{\$category_number}</strong></span>
 	</td>
-	{\$additional}
+	{\$additional['sort']}
+	{\$additional['control']}
 </tr>",
 				/* Zusätzliche Elemente für Moderatoren */
-					   "table_mod" => "
+					   "table_sort" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><input type=\"text\" name=\"disporder[{\$cid}]\" value=\"{\$category_sort}\" class=\"text_input align_center\" style=\"width: 80%; font-weight: bold;\" /></span>
-	</td>
+	</td>",
+						"table_control" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=category_edit&cid={\$cid}\"><img src=\"{\$settings['bburl']}/images/wiki_edit.gif\" alt=\"{\$lang->wiki_edit}\" title=\"{\$lang->wiki_edit}\" /></a></span>
 	</td>
@@ -628,6 +726,15 @@ function wiki_templates($install=false)
 <head>
 	<title>{\$settings['bbname']} - {\$lang->wiki} - {\$category['title']}</title>
 	{\$headerinclude}
+	<style type=\"text/css\">
+	.wiki_panel {
+		background: #efefef;
+		color: #000000;
+		font-size: 11px;
+		border: 1px solid #D4D4D4;
+		padding: 8px;
+	}
+	</style>
 </head>
 <body>
 {\$header}
@@ -649,7 +756,8 @@ function wiki_templates($install=false)
 		<td class=\"tcat\" width=\"45%\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_short}</strong></span>
 		</td>
-		{\$additional}
+		{\$additional['sort']}
+		{\$additional['control']}
 	</tr>
 	{\$wiki_table}
 </table>
@@ -659,10 +767,11 @@ function wiki_templates($install=false)
 </body>
 </html>",
 				/* Zusätzliche Spalten für Moderatoren */
-					   "category_mod" => "
+					   "category_sort" => "
 		<td class=\"tcat\" width=\"5%\" >
 			<span class=\"smalltext\"><strong>{\$lang->order}</strong></span>
-		</td>
+		</td>",
+						"category_control" => "
 		<td class=\"tcat\" width=\"5%\" colspan=\"2\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_control}</strong></span>
 		</td>",
@@ -675,13 +784,15 @@ function wiki_templates($install=false)
 	<td style=\"background: {\$background};\" class=\"trow1\">
 		<span class=\"smalltext\"><strong>{\$wiki_short}</strong></span>
 	</td>
-	{\$additional}
+	{\$additional['sort']}
+	{\$additional['control']}
 </tr>",
 				/* Zusätzliche Elemente für Moderatoren */
-					   "category_table_mod" => "
+					   "category_table_sort" => "
 	<td style=\"background: {\$background};\" class=\"trow1\">
 		<span class=\"smalltext\"><input type=\"text\" name=\"disporder[{\$wiki['id']}]\" value=\"{\$wiki['Sort']}\" class=\"text_input align_center\" style=\"width: 80%; font-weight: bold;\" /></span>
-	</td>
+	</td>",
+						"category_table_control" => "
 	<td style=\"background: {\$background};\" class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_edit&wid={\$wiki['id']}\"><img src=\"{\$settings['bburl']}/images/wiki_edit.gif\" alt=\"{\$lang->wiki_edit}\" title=\"{\$lang->wiki_edit}\" /></a></span>
 	</td>
@@ -694,6 +805,15 @@ function wiki_templates($install=false)
 <head>
 	<title>{\$settings['bbname']} - {\$lang->wiki} - {\$wiki_title}</title>
 	{\$headerinclude}
+	<style type=\"text/css\">
+	.wiki_panel {
+		background: #efefef;
+		color: #000000;
+		font-size: 11px;
+		border: 1px solid #D4D4D4;
+		padding: 8px;
+	}
+	</style>
 </head>
 <body>
 {\$header}
@@ -797,8 +917,8 @@ function wiki_templates($install=false)
 	</tr>",
 				/* Panel für Hauptseite */
                        "panel" => "
-<div style=\"background: #efefef; color: #000000; font-size: 11px; border: 1px solid #D4D4D4; padding: 8px;\">
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=category_add\" title=\"{\$lang->wiki_nav_category_add}\">{\$lang->wiki_nav_category_add}</a>
+<div class=\"wiki_panel\">
+{\$category_add}
 <a style=\"float: right;\" href=\"{\$mybb->settings['bburl']}/{\$wiki_new}\" title=\"{\$lang->wiki_nav_new}\">{\$lang->wiki_nav_new}</a>
 <span style=\"float: right; padding-right: 5px;\">{\$search}</span>
 <br />
@@ -806,20 +926,21 @@ function wiki_templates($install=false)
 <br />",
 				/* Panel für Artikelauflistung */
                        "panel_category" => "
-<div style=\"background: #efefef; color: #000000; font-size: 11px; border: 1px solid #D4D4D4; padding: 8px;\">
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_add&cid={\$wiki_cid}\" title=\"{\$lang->wiki_nav_add}\">{\$lang->wiki_nav_add}</a> |
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=category_edit&cid={\$wiki_cid}\" title=\"{\$lang->wiki_nav_category_edit}\">{\$lang->wiki_nav_category_edit}</a> |
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=category_delete&cid={\$wiki_cid}\" title=\"{\$lang->wiki_nav_category_delete}\">{\$lang->wiki_nav_category_delete}</a>
+<div class=\"wiki_panel\">
+{\$article_add}
+{\$article_edit}
+{\$article_delete}
 <br />
 </div>
 <br />",
 				/* Panel für Artikelanzeige */
                        "panel_text" => "
-<div style=\"background: #efefef; color: #000000; font-size: 11px; border: 1px solid #D4D4D4; padding: 8px;\">
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_add&cid={\$cid}\" title=\"{\$lang->wiki_nav_add}\">{\$lang->wiki_nav_add}</a> |
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_edit&wid={\$id}\" title=\"{\$lang->wiki_nav_edit}\">{\$lang->wiki_nav_edit}</a> |
-<a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_delete&wid={\$id}\" title=\"{\$lang->wiki_nav_delete}\">{\$lang->wiki_nav_delete}</a>
-{\$versions}{\$unlock}
+<div class=\"wiki_panel\">
+{\$article_add}
+{\$article_edit}
+{\$article_delete}
+{\$versions}
+{\$unlock}
 <br />
 </div>
 <br />",
@@ -833,8 +954,8 @@ function wiki_templates($install=false)
                        "add" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_add}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_add}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -895,8 +1016,8 @@ function wiki_templates($install=false)
                        "edit" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_edit}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_edit}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -958,8 +1079,8 @@ function wiki_templates($install=false)
                        "delete" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_delete}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_delete}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -998,8 +1119,8 @@ function wiki_templates($install=false)
                        "category_add" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_add}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_add}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -1039,8 +1160,8 @@ function wiki_templates($install=false)
                        "category_edit" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_edit}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_edit}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -1081,8 +1202,8 @@ function wiki_templates($install=false)
                        "category_delete" => "
 <html>
 <head>
-<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_delete}</title>
-{\$headerinclude}
+	<title>{\$mybb->settings['bbname']} - {\$lang->wiki_category_delete}</title>
+	{\$headerinclude}
 </head>
 <body>
 	{\$header}
@@ -1151,15 +1272,19 @@ function wiki_templates($install=false)
 		<td class=\"tcat\" width=\"8%\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_trash_deletedfrom}</strong></span>
 		</td>
-		<td class=\"tcat\" width=\"8%\">
-			<span class=\"smalltext\"><strong>{\$lang->wiki_restore}</strong></span>
-		</td>
-		<td class=\"tcat\" width=\"10%\">
-			<span class=\"smalltext\"><strong>{\$lang->wiki_trash_delete}</strong></span>
-		</td>
+		{\$restore}
+		{\$delete}
 	</tr>
 	{\$wiki_trash_table}
 </table>",
+						"trash_table_restore" => "
+		<td class=\"tcat\" width=\"8%\">
+			<span class=\"smalltext\"><strong>{\$lang->wiki_restore}</strong></span>
+		</td>",
+						"trash_table_delete" => "
+		<td class=\"tcat\" width=\"10%\">
+			<span class=\"smalltext\"><strong>{\$lang->wiki_trash_delete}</strong></span>
+		</td>",
 				/* Mülleimer - Tabellenelemt */
                        "trash_table_element" => "
 <tr>
@@ -1175,13 +1300,17 @@ function wiki_templates($install=false)
 	<td class=\"trow1\">
 		<span class=\"smalltext\">{\$trash['deletedfrom']}</strong></span>
 	</td>
+	{\$restore}
+	{\$delete}
+</tr>",
+						"trash_table_element_restore" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"wiki.php?action=restore&wid={\$trash['id']}\">{\$lang->wiki_restore}</a></strong></span>
-	</td>
+	</td>",
+						"trash_table_element_delete" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"wiki.php?action=trash_delete&wid={\$trash['id']}\">{\$lang->wiki_trash_delete}</a></strong></span>
-	</td>
-</tr>",
+	</td>",
 				/* Anzeige verschiedener Versionen */
                        "versions" => "
 <html>
@@ -1209,18 +1338,22 @@ function wiki_templates($install=false)
 		<td class=\"tcat\" width=\"5%\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_user}</strong></span>
 		</td>
-		<td class=\"tcat\" width=\"5%\">
-			<span class=\"smalltext\"><strong>{\$lang->wiki_restore}</strong></span>
-		</td>
-		<td class=\"tcat\" width=\"5%\">
-			<span class=\"smalltext\"><strong>{\$lang->wiki_version_delete}</strong></span>
-		</td>
+		{\$restore}
+		{\$delete}
 	</tr>
 	{\$wiki_table}
 </table>
 {\$footer}
 </body>
 </html>",
+						"versions_restore" => "
+		<td class=\"tcat\" width=\"5%\">
+			<span class=\"smalltext\"><strong>{\$lang->wiki_restore}</strong></span>
+		</td>",
+						"versions_delete" => "
+		<td class=\"tcat\" width=\"5%\">
+			<span class=\"smalltext\"><strong>{\$lang->wiki_version_delete}</strong></span>
+		</td>",
 				/* Elemente für Versions Tabelle */
                        "versions_table" => "
 <tr>
@@ -1236,13 +1369,17 @@ function wiki_templates($install=false)
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><strong>{\$wiki['user']}</strong></span>
 	</td>
+	{\$restore}
+	{\$delete}
+</tr>",
+						"versions_table_restore" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=restore_version&vid={\$vid}\">{\$lang->wiki_restore}</a></span>
-	</td>
+	</td>",
+						"versions_table_delete" => "
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=delete_version&vid={\$vid}\">{\$lang->wiki_version_delete}</a></span>
-	</td>
-</tr>",
+	</td>",
     				/* Neue und Aktualisierte Artikel */
                        "new" => "
 <html>

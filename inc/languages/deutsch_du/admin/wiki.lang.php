@@ -5,6 +5,7 @@ $l['wiki'] = "Wiki";
 /* Menü */
 $l['wiki_index'] = "Übersicht";
 $l['wiki_article'] = "Artikel";
+$l['wiki_permissions'] = "Berechtigungen";
 $l['wiki_option'] = "Einstellungen";
 $l['wiki_import'] = "Importieren";
 $l['wiki_update'] = "Update";
@@ -83,8 +84,33 @@ $l['wiki_error'] = "Unbekannter Fehler beim Update";
 
 
 /* Permissions */
+$l['wiki_group'] = "Benutzergruppe";
+$l['wiki_generall'] = "Allgemein";
+$l['wiki_can_view'] = "Kann das Wiki sehen";
+$l['wiki_can_create'] = "Kann Artikel erstellen";
+$l['wiki_can_edit'] = "Kann Artikel bearbeiten/löschen";
+$l['wiki_can_search'] = "Kann die Suche benutzen";
+$l['wiki_versions'] = "Versionen";
+$l['wiki_can_version_view'] = "Kann Versionen sehen";
+$l['wiki_can_version_restore'] = "Kann Versionen wiederherstellen";
+$l['wiki_can_version_delete'] = "Kann Versionen löschen";
+$l['wiki_trash'] = "Mülleimer";
+$l['wiki_can_trash_view'] = "Kann den Mülleimer sehen";
+$l['wiki_can_trash_restore'] = "Kann gelöschte Artikel wiederherstellen";
+$l['wiki_can_trash_delete'] = "Kann Artikel endgültig löschen";
+$l['wiki_other'] = "Sonstiges";
+$l['wiki_can_edit_closed'] = "Kann geschloßene Artikel bearbeiten";
+$l['wiki_can_view_hidden'] = "Kann versteckte Artikel sehen";
+$l['wiki_can_edit_sort'] = "Kann die Sortierung ändern";
+$l['wiki_can_unlock'] = "Kann Artikel freischalten";
+$l['wiki_permissions_save'] = "Berechtigungen speichern";
+$l['wiki_permissions_saved'] = "Berechtigungen gespeichert";
+
+
+/* Admin Permissions */
 $l['wiki_permission_index'] = "Kann die übersicht sehen";
 $l['wiki_permission_article'] = "Kann alle Artikel sehen";
+$l['wiki_permission_permissions'] = "Kann Berechtigungen ändern";
 $l['wiki_permission_import'] = "Kann Artikel & Kategorieren importieren";
 $l['wiki_permission_update'] = "Kann ein Update durchführen";
 

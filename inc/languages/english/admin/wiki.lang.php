@@ -5,6 +5,7 @@ $l['wiki'] = "Wiki";
 /* Menü */
 $l['wiki_index'] = "Overview";
 $l['wiki_article'] = "Entries";
+$l['wiki_permissions'] = "Permissions";
 $l['wiki_option'] = "Settings";
 $l['wiki_import'] = "Import";
 $l['wiki_update'] = "Update";
@@ -83,8 +84,33 @@ $l['wiki_error'] = "Unknown error while updating";
 
 
 /* Permissions */
+$l['wiki_group'] = "Usergroup";
+$l['wiki_generall'] = "General";
+$l['wiki_can_view'] = "Can see the wiki";
+$l['wiki_can_create'] = "Can add articles";
+$l['wiki_can_edit'] = "Can edit/delete articles";
+$l['wiki_can_search'] = "Can use the search";
+$l['wiki_versions'] = "Versions";
+$l['wiki_can_version_view'] = "Can see versions";
+$l['wiki_can_version_restore'] = "Can restore versions";
+$l['wiki_can_version_delete'] = "Can delete versions";
+$l['wiki_trash'] = "Trashcan";
+$l['wiki_can_trash_view'] = "Cans see the trashcan";
+$l['wiki_can_trash_restore'] = "Can restore deleted articles";
+$l['wiki_can_trash_delete'] = "Can delete articles definitivly";
+$l['wiki_other'] = "Other";
+$l['wiki_can_edit_closed'] = "Can edit closed articles";
+$l['wiki_can_view_hidden'] = "Can see hidden articles";
+$l['wiki_can_edit_sort'] = "Can change the sorting";
+$l['wiki_can_unlock'] = "Can unlock articles";
+$l['wiki_permissions_save'] = "Save permissions";
+$l['wiki_permissions_saved'] = "Permissions saved";
+
+
+/* Admin Permissions */
 $l['wiki_permission_index'] = "Can see the overview";
 $l['wiki_permission_article'] = "Can see all entries";
+$l['wiki_permission_permissions'] = "Can change permissions";
 $l['wiki_permission_import'] = "Can import entries and categories";
 $l['wiki_permission_update'] = "Can update the plugin";
 
