@@ -8,6 +8,7 @@ $l['wiki_article'] = "Artikel";
 $l['wiki_permissions'] = "Berechtigungen";
 $l['wiki_option'] = "Einstellungen";
 $l['wiki_import'] = "Importieren";
+$l['wiki_cache'] = "Cache";
 $l['wiki_update'] = "Update";
 
 
@@ -107,11 +108,21 @@ $l['wiki_permissions_save'] = "Berechtigungen speichern";
 $l['wiki_permissions_saved'] = "Berechtigungen gespeichert";
 
 
+/* Cache */
+$l['wiki_articles'] = "Artikel";
+$l['wiki_categories'] = "Kategorien";
+$l['wiki_elements'] = "Anzahl Elemente";
+$l['wiki_reload'] = "Neuladen";
+$l['wiki_cache_empty'] = "Der Cache \"{1}\" existiert nicht oder ist leer";
+$l['wiki_cache_reload'] = "Cache \"{1}\" neugeladen";
+
+
 /* Admin Permissions */
 $l['wiki_permission_index'] = "Kann die übersicht sehen";
 $l['wiki_permission_article'] = "Kann alle Artikel sehen";
 $l['wiki_permission_permissions'] = "Kann Berechtigungen ändern";
 $l['wiki_permission_import'] = "Kann Artikel & Kategorieren importieren";
+$l['wiki_permission_cache'] = "Kann den Cache verwalten";
 $l['wiki_permission_update'] = "Kann ein Update durchführen";
 
 

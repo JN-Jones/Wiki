@@ -12,33 +12,34 @@ $PL or require_once PLUGINLIBRARY;
 
 if($mybb->input['action']=="export") {
 	if($mybb->input['cat']) {
-		$query = $db->simple_select("wiki_cats", "*", "id='{$mybb->input['cat']}'");
-		while($cat=$db->fetch_array($query))
-			$data['cats'][] = $cat;
+		$cat = wiki_cache_load("categories", $mybb->input['cat']);
+		$data['cats'][] = $cat;
 		$filename = "wiki_cat_".$data['cats'][0]['title'];
 		$comment = $lang->wiki_export_cat_comment;
 	} elseif($mybb->input['art']) {
-		$query = $db->simple_select("wiki", "*", "id='{$mybb->input['art']}'");
-		while ($art=$db->fetch_array($query))
-			$data['art'][] = $art;
-		$query = $db->simple_select("wiki_versions", "*", "wid='{$mybb->input['art']}'");
-		while($versions=$db->fetch_array($query))
-			$data['versions'][] = $versions;
+		$art = wiki_cache_load("articles", $mybb->input['art']);
+		$data['art'][] = $art;
+		$versions = wiki_cache_load("versions");
+		foreach($versions as $version) {
+			if($version['wid'] != $mybb->input['art'])
+			    continue;
+			$data['versions'][] = $version;
+		}
 		$filename = "wiki_art_".$data['art'][0]['title'];
 		$comment = $lang->wiki_export_art_comment;
 	} else {
-		$query = $db->simple_select("wiki");
-		while ($art=$db->fetch_array($query))
+		$articles = wiki_cache_load("articles");
+		foreach($articles as $art)
 			$data['art'][] = $art;
-		$query = $db->simple_select("wiki_cats");
-		while($cat=$db->fetch_array($query))
+		$category = wiki_cache_load("categories");
+		foreach($category as $cat)
 			$data['cats'][] = $cat;
-		$query = $db->simple_select("wiki_trash");
-		while($trash=$db->fetch_array($query))
+		$trashs = wiki_cache_load("trash");
+		foreach($trashs as $trash)
 			$data['trash'][] = $trash;
-		$query = $db->simple_select("wiki_versions");
-		while($versions=$db->fetch_array($query))
-			$data['versions'][] = $versions;
+		$versions = wiki_cache_load("versions");
+		foreach($versions as $version)
+			$data['versions'][] = $version;
 		$filename = "wiki";
 		$comment = $lang->wiki_export_comment;
 	}
@@ -61,10 +62,17 @@ if($mybb->input['action']=="cat") {
 	$table->construct_header($lang->wiki_cat_number);
 	$table->construct_header($lang->wiki_export);
 
-	$query = $db->simple_select("wiki_cats", "*", "", array("order_by"=>"Sort"));
-	if($db->num_rows($query)>0) {
-		while($t=$db->fetch_array($query)) {
-			$t['number'] = $db->num_rows($db->simple_select("wiki", "id", "cid='{$t['id']}'"));
+	$category = wiki_cache_load("categories");
+	if(sizeOf($category) > 0 && $category) {
+		$articles = wiki_cache_load("articles");
+		uasort($category, "wiki_sort_sort");
+		foreach($category as $t) {
+     		$t['number'] = 0;
+	 		foreach($articles as $article) {
+				if($article['cid'] == $t['id'])
+				    $t['number']++;
+			}
+
 			$table->construct_cell("<a href=\"index.php?module=wiki-article&cat={$t['id']}\">{$t['title']}</a>", array('width' => '50%'));
 			$table->construct_cell($t['number'], array('width' => '25%'));
 			$table->construct_cell("<a href=\"index.php?module=wiki-article&action=export&cat={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '25%'));
@@ -85,9 +93,12 @@ if($mybb->input['action']=="cat") {
 	$table->construct_header($lang->wiki_trash_date);
 	$table->construct_header($lang->wiki_trash_from);
 
-	$query = $db->simple_select("wiki_trash", "*", "", array("order_by"=>"date", "order_dir"=>"desc"));
-	if($db->num_rows($query)>0) {
-		while($t=$db->fetch_array($query)) {
+	$trashs = wiki_cache_load("trash");
+	if(sizeOf($trashs) > 0 && $trashs) {
+		$category = wiki_cache_load("categories");
+		uasort($trashs, "wiki_sort_date");
+		$trashs = array_reverse($trashs, true);
+		foreach($trashs as $t) {
 			$trash=@unserialize($t['entry']);
 			$uid=intval($t['from']);
 			$user = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
@@ -107,8 +118,7 @@ if($mybb->input['action']=="cat") {
 			}
 			$username_formatted = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
 			$profilelink = build_profile_link($username_formatted, $user['uid']);
-			$cat_query=$db->simple_select("wiki_cats", "title", "id='{$trash['cid']}'");
-			$cat = $db->fetch_field($cat_query, "title");
+			$cat = $category[$trash['cid']]['title'];
 			$date=date($mybb->settings['dateformat'], $t['date'])." ".date($mybb->settings['timeformat'], $t['date']);
 
 			$table->construct_cell($trash['title'], array('width' => '20%'));
@@ -139,13 +149,16 @@ if($mybb->input['action']=="cat") {
 	$table->construct_header($lang->wiki_art_date);
 	$table->construct_header($lang->wiki_export);
 
-	$where = "";
 	if($mybb->input['cat'])
-	    $where = "cid='{$mybb->input['cat']}'";
+	    $cid = $mybb->input['cat'];
 
-	$query = $db->simple_select("wiki", "*", $where, array('oder_by'=>'title'));
-	if($db->num_rows($query)>0) {
-		while($t=$db->fetch_array($query)) {
+	$articles = wiki_cache_load("articles");
+	if(sizeOf($articles) > 0 && $articles) {
+		uasort($articles, "wiki_sort_sort");
+		foreach($articles as $t) {
+			if(isset($cid) && $t['cid'] != $cid)
+			    continue;
+			
 			$uid=intval($t['uid']);
 			$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 			$user = $db->fetch_array($user);

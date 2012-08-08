@@ -1,5 +1,6 @@
 <?php
 $l['wiki'] = "Wiki";
+$l['wiki_deactivated'] = "Das Wiki wurde von einem Admin deaktiviert und ist daher momentan nicht verfügbar.";
 
 
 /* Nav */
@@ -55,8 +56,8 @@ $l['redirect_wiki_add_moderate'] = "Wiki Artikel erfolgreich hinzugefügt. Bitte
 $l['redirect_wiki_edit'] = "Wiki Artikel erfolgreich bearbeitet";
 $l['redirect_wiki_delete'] = "Wiki Artikel erfolgreich gelöscht";
 $l['redirect_wiki_restore'] = "Wiki Artikel erfolgreich wiederhergestellt";
-$l['redirect_wiki_restore'] = "Wiki Artikel erfolgreich wiederhergestellt";
 $l['redirect_wiki_trash_delete'] = "Wiki Artikel endgültig gelöscht";
+$l['redirect_wiki_restore_version'] = "Wiki Artikel Version erfolgreich wiederhergestellt";
 $l['redirect_wiki_version_delete'] = "Wiki Artikel Version endgültig gelöscht";
 $l['redirect_wiki_unlock'] = "Wiki Artikel erfolgreich freigeschaltet";
 $l['redirect_wiki_order'] = "Neue Sortierung erfolgreich gespeichert";

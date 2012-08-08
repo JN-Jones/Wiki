@@ -36,7 +36,7 @@ if($mybb->input['action']=="do_import") {
 	if(!$data) {
 //		echo "<pre>"; var_dump($error); echo "</pre>";
  		flash_message($lang->wiki_import_invalid_file, 'error');
-		admin_redirect("index.php?module=wiki-import");		
+		admin_redirect("index.php?module=wiki-import");
 	}
 //	echo "0:<br /><pre>"; var_dump($data); echo "</pre>";
 	$counter = array("cat"=>0, "art"=>0, "trash"=>0, "version"=>0);
@@ -46,15 +46,15 @@ if($mybb->input['action']=="do_import") {
 		foreach($data['cats'] as $cat) {
 			$oldid=$cat['id'];
 			unset($cat['id']);
-			$db->insert_query('wiki_cats', $cat);
-			$catid[$oldid]=$db->insert_id();
+			$catid[$oldid] = $db->insert_query('wiki_cats', $cat);
 			$counter['cat']++;
 		}
+		wiki_cache_update("categories");
 	}
 	if($data['art']) {
 		$artid = array();
-		$catquery = $db->simple_select("wiki_cats", "*", "", array("limit"=>"1"));
-		$newcat = $db->fetch_array($catquery);
+		$newcat = wiki_cache_load("categories");
+		array_splice($newcat, 1);
 		$usednewcat = false;
 		foreach($data['art'] as $art) {
 			$changed = false;
@@ -70,10 +70,10 @@ if($mybb->input['action']=="do_import") {
 				$art['cid'] = $newcat['id'];
 				$usednewcat = true;
 			}
-			$db->insert_query('wiki', $art);
-			$artid[$oldid]=$db->insert_id();
+			$artid[$oldid] = $db->insert_query('wiki', $art);
 			$counter['art']++;
 		}
+		wiki_cache_update("articles");
 	}
 	if($data['trash']) {
 		foreach($data['trash'] as $trash) {
@@ -81,6 +81,7 @@ if($mybb->input['action']=="do_import") {
 			$db->insert_query('wiki_trash', $trash);
 			$counter['trash']++;
 		}
+		wiki_cache_update("trash");
 	}
 	if($data['versions']&&$artid) {
 		foreach($data['versions'] as $version) {
@@ -92,6 +93,7 @@ if($mybb->input['action']=="do_import") {
 			$db->insert_query('wiki_versions', $version);
 			$counter['version']++;
 		}
+		wiki_cache_update("versions");
 	}
 	$lang->wiki_import_success = $lang->sprintf($lang->wiki_import_success, $counter['art'], $counter['cat'], $counter['trash'], $counter['version']);
 	if($usednewcat) {

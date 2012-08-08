@@ -121,21 +121,28 @@ $table->construct_cell($pl_bw, array('width' => '50%'));
 $table->construct_row();
 $table->output($lang->wiki_pl_info);
 
-$num_art = $db->num_rows($db->simple_select("wiki"));
-$num_cat = $db->num_rows($db->simple_select("wiki_cats"));
-$num_trash = $db->num_rows($db->simple_select("wiki_trash"));
-$num_vers = $db->num_rows($db->simple_select("wiki_versions"))+$num_art;
+$wcache['articles'] = wiki_cache_load("articles");
+$wcache['categories'] = wiki_cache_load("categories");
+$wcache['versions'] = wiki_cache_load("versions");
+$wcache['trash'] = wiki_cache_load("trash");
+
+foreach($wcache as $key => $value) {
+	if(is_array($value))
+		$number[$key] = sizeOf($value);
+	else
+		$number[$key] = 0;
+}
 
 $table = new Table;
 $table->construct_cell("<b>$lang->wiki_num_art</b>", array('width' => '25%'));
-$table->construct_cell($num_art, array('width' => '25%'));
+$table->construct_cell($number['articles'], array('width' => '25%'));
 $table->construct_cell("<b>$lang->wiki_num_cat</b>", array('width' => '25%'));
-$table->construct_cell($num_cat, array('width' => '25%'));
+$table->construct_cell($number['categories'], array('width' => '25%'));
 $table->construct_row();
 $table->construct_cell("<b>$lang->wiki_num_trash</b>", array('width' => '25%'));
-$table->construct_cell($num_trash, array('width' => '25%'));
+$table->construct_cell($number['trash'], array('width' => '25%'));
 $table->construct_cell("<b>$lang->wiki_num_vers</b>", array('width' => '25%'));
-$table->construct_cell($num_vers, array('width' => '25%'));
+$table->construct_cell($number['versions']+$number['articles'], array('width' => '25%'));
 $table->construct_row();
 $table->output($lang->wiki_stat);
 

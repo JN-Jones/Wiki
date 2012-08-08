@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2 Beta 1",
+		"version"		=> "1.2 Beta 2",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -73,13 +73,15 @@ function wiki_install()
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_trash` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
-				`entry` text, `from` int(10) NOT NULL,
+				`entry` text,
+				`from` int(10) NOT NULL,
 				`date` bigint(30) NOT NULL,
 	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_versions` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
-				`wid` int(11) NOT NULL,
+				`wid` int(11) NOT NULL DEFAULT '-1',
+				`tid` int(11) NOT NULL DEFAULT '-1',
 				`entry` text,
 	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
 
@@ -111,8 +113,8 @@ function wiki_install()
 			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-		');	
-	
+		');
+
 	$PL->cache_update("wiki_version", $plugininfo['version']);
 	$PL->cache_update("wiki_pl_version", "8");
 }
@@ -135,9 +137,15 @@ function wiki_uninstall()
 	$db->drop_table("wiki_cats");
 	$db->drop_table("wiki_trash");
 	$db->drop_table("wiki_versions");
+	$db->drop_table("wiki_permissions");
 
 	$PL->cache_delete("wiki_version");
 	$PL->cache_delete("wiki_pl_version");
+	$PL->cache_delete("wiki_articles");
+	$PL->cache_delete("wiki_categories");
+	$PL->cache_delete("wiki_versions");
+	$PL->cache_delete("wiki_trash");
+	$PL->cache_delete("wiki_permissions");
 }
 
 function wiki_activate()
@@ -200,44 +208,38 @@ function wiki_wol_activity($user_activity)
 
 function wiki_wol_location($array)
 {
-	global $db, $lang, $settings, $wiki_link;
+	global $lang, $settings, $wiki_link;
     switch ($array['user_activity']['activity'])
     {
         case 'wiki':
 //        	echo "<pre>"; var_dump($array['user_activity']['wiki']); echo "</pre>";
         	if($array['user_activity']['wiki']['entry']) {
 	        	$id=$array['user_activity']['wiki']['entry'];
-				$test = $db->simple_select("wiki", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("articles", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_entry, wiki_get_article($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['cat']) {
 	        	$id=$array['user_activity']['wiki']['cat'];
-				$test = $db->simple_select("wiki_cats", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("categories", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_cat, wiki_get_category($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['cat_add'])
 				$array['location_name'] = $lang->wiki_wol_cat_add;
 			elseif($array['user_activity']['wiki']['cat_edit']) {
 	        	$id=$array['user_activity']['wiki']['cat_edit'];
-				$test = $db->simple_select("wiki_cats", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("categories", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_cat_edit, wiki_get_category($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['cat_delete']) {
 	        	$id=$array['user_activity']['wiki']['cat_delete'];
-				$test = $db->simple_select("wiki_cats", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("categories", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_cat_delete, wiki_get_category($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['entry_add'])
 				$array['location_name'] = $lang->wiki_wol_add;
 			elseif($array['user_activity']['wiki']['entry_edit']) {
 	        	$id=$array['user_activity']['wiki']['entry_edit'];
-				$test = $db->simple_select("wiki", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("articles", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_edit, wiki_get_category($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['entry_delete']) {
 	        	$id=$array['user_activity']['wiki']['entry_delete'];
-				$test = $db->simple_select("wiki", "title, id", "id='{$id}'");
-				$wiki=$db->fetch_array($test);
+				$wiki = wiki_cache_load("articles", $id);
 	            $array['location_name'] = $lang->sprintf($lang->wiki_wol_delete, wiki_get_category($wiki['id']), $wiki['title']);
 			} elseif($array['user_activity']['wiki']['search'])
 				$array['location_name'] = $lang->sprintf($lang->wiki_wol_search, $wiki_link);
@@ -252,12 +254,12 @@ function wiki_mycode($message)
 {
 	global $mybb;
 	if($mybb->settings['wiki_mycode']=="1"||$mybb->settings['wiki_mycode']=="both") {
-		$message = preg_replace_callback("#\[\[([0-9]):(.*?)\]\]#si", "wiki_mycode_createID", $message);
+		$message = preg_replace_callback("#\[\[([0-9]*):(.*?)\]\]#si", "wiki_mycode_createID", $message);
 		$message = preg_replace_callback("#\[\[([a-zA-Z0-9\s]*):(.*?)\]\]#si", "wiki_mycode_create", $message);
 		$message = preg_replace_callback("#\[\[(.*?)\]\]#si", "wiki_mycode_create", $message);
 	}
 	if($mybb->settings['wiki_mycode']=="2"||$mybb->settings['wiki_mycode']=="both") {
-		$message = preg_replace_callback("#\[wiki=([0-9])\](.*?)\[/wiki\]#si", "wiki_mycode_createID", $message);
+		$message = preg_replace_callback("#\[wiki=([0-9]*)\](.*?)\[/wiki\]#si", "wiki_mycode_createID", $message);
 		$message = preg_replace_callback("#\[wiki=([a-zA-Z0-9\s]*)\](.*?)\[/wiki\]#si", "wiki_mycode_create", $message);
 		$message = preg_replace_callback("#\[wiki\](.*?)\[/wiki\]#si", "wiki_mycode_create", $message);
 	}
@@ -266,10 +268,9 @@ function wiki_mycode($message)
 
 function wiki_mycode_createID(array $match)
 {
-	global $db, $settings;
+	global $settings;
 	$id=intval($match[1]); $name=$match[2];
-	$query=$db->simple_select("wiki", "text, link, short", "id='{$id}'");
-	$wiki=$db->fetch_array($query);
+	$wiki = wiki_cache_load("articles", $id);
 	if($wiki['link'])
 	    return '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank" title="'.$wiki['short'].'">'.$name.'</a>';
 	elseif($wiki['text'])
@@ -280,21 +281,24 @@ function wiki_mycode_createID(array $match)
 
 function wiki_mycode_create(array $match)
 {
-	global $db, $settings;
-	$name=$db->escape_string($match[1]);
-	$show=$match[2];
+	global $settings;
+	$name = $match[1];
+	$show = $match[2];
 	if(!isset($show))
 	    $show=$match[1];
-	$query=$db->simple_select("wiki", "id", "title='{$name}'", array('limit'=>'0,1'));
-	if($db->num_rows($query)==0)
+	$found = array();
+	$articles = wiki_cache_load("articles");
+	foreach($articles as $article) {
+		if($article['title'] == $name)
+		    $found[] = $article;
+	}
+	if(sizeOf($found) == 0)
 	    return $name;
-	$id=$db->fetch_array($query); $id=$id['id'];
-	$query=$db->simple_select("wiki", "text, link, short", "id='{$id}'");
-	$wiki=$db->fetch_array($query);
+	$wiki = $found[0];
 	if($wiki['link'])
 	    return '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank" title="'.$wiki['short'].'">'.$show.'</a>';
 	elseif($wiki['text'])
-		return '<a href="'.$settings['bburl'].'/'.wiki_get_article($id).'" title="'.$wiki['short'].'">'.$show.'</a>';
+		return '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'" title="'.$wiki['short'].'">'.$show.'</a>';
 	else
 		return $show;
 
@@ -302,12 +306,12 @@ function wiki_mycode_create(array $match)
 
 function wiki_autolink($message)
 {
-	global $db, $mybb;
+	global $mybb;
 	if($mybb->settings['wiki_autolink']=="0")
 	    return $message;
-	$query=$db->simple_select("wiki", "id, title, text, link, short");
-	while($wiki=$db->fetch_array($query)) {
-		if($wiki['link'])
+	$articles = wiki_cache_load("articles");
+	foreach($articles as $wiki) {
+    	if($wiki['link'])
 		    $link = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
 		elseif($wiki['text'])
 			$link = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
@@ -331,7 +335,7 @@ function wiki_is_allowed($action)
 
 function wiki_init()
 {
-	global $lang, $wiki_copyright, $mybb, $templates, $wiki_link, $db;
+	global $lang, $wiki_copyright, $mybb, $templates, $wiki_link;
 	$lang->load("wiki");
 	if($mybb->settings['wiki_copy'])
 		eval("\$wiki_copyright = \"".$templates->get("wiki_copy")."\";");
@@ -362,12 +366,13 @@ function wiki_init()
 	    $groups = array();
 	$groups[] = $mybb->user['usergroup'];
 
-	$resultSet = $db->query('SELECT * FROM '.TABLE_PREFIX.'wiki_permissions WHERE gid IN ('.implode(',', $groups).')');
+	$perms = wiki_cache_load("permissions");
 
 	$permissions = array();
 
-	while($row = $db->fetch_array($resultSet))
-	{
+	foreach ($perms as $row) {
+		if(!in_array($row['gid'], $groups))
+		    continue;
 		foreach($row as $key => $value)
 		{
 			if($key == 'gid')
@@ -405,6 +410,80 @@ function wiki_get_version($vid)
 {
 	$link = str_replace("{vid}", $vid, WIKI_VERSION);
 	return htmlspecialchars_uni($link);
+}
+
+function wiki_cache_update($action, $data = false)
+{
+	global $PL, $db;
+    $PL or require_once PLUGINLIBRARY;
+	if(!$data) {
+		if($action == "articles")
+		    $query = $db->simple_select("wiki");
+		elseif($action == "categories")
+		    $query = $db->simple_select("wiki_cats");
+		elseif($action == "versions")
+		    $query = $db->simple_select("wiki_versions");
+		elseif($action == "trash")
+		    $query = $db->simple_select("wiki_trash");
+		elseif($action == "permissions") {
+		    $query = $db->simple_select("wiki_permissions");
+			while($rdata = $db->fetch_array($query))
+			    $data[$rdata['gid']] = $rdata;
+		} else
+			return false;
+		if($action != "permissions") {
+			while($rdata = $db->fetch_array($query))
+			    $data[$rdata['id']] = $rdata;
+		}
+	}
+	if(!is_array($data))
+		return $PL->cache_update("wiki_".$action, false);
+
+	return $PL->cache_update("wiki_".$action, $data);
+}
+
+function wiki_cache_load($action, $id = false)
+{
+	global $PL;
+    $PL or require_once PLUGINLIBRARY;
+
+	$content = $PL->cache_read("wiki_".$action);
+	if(!is_array($content) && $content !== false)
+	    $content = wiki_cache_update($action);
+	if(!is_array($content))
+	    return false;
+	if(!$id)
+		return $content;
+	return $content[$id];
+}
+
+function wiki_sort_sort($a, $b)
+{
+	if($a['Sort'] == $b['Sort'])
+	    return 1;
+	return ($a['Sort'] < $b['Sort']) ? 0 : 2;
+}
+
+function wiki_sort_title($a, $b)
+{
+	return strcoll($a['title'], $b['title']);
+}
+
+function wiki_sort_date($a, $b)
+{
+	if($a['date'] == $b['date'])
+	    return 1;
+	return ($a['date'] < $b['date']) ? 0 : 2;
+}
+
+function wiki_sort_versions_date($a, $b)
+{
+	$e1 = @unserialize($a['entry']);
+	$e2 = @unserialize($b['entry']);
+
+    if($e1['date'] == $e2['date'])
+	    return 1;
+	return ($e1['date'] < $e2['date']) ? 0 : 2;
 }
 
 function createHeader($user, $wiki, $showbuttons=true)
@@ -569,7 +648,7 @@ function wiki_update($installed, $uploaded)
 			can_view_hidden boolean NOT NULL DEFAULT 0,
 			can_edit_sort boolean NOT NULL DEFAULT 0
 		)');
-	
+
 		$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
 				(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort)
 			VALUES
@@ -585,6 +664,10 @@ function wiki_update($installed, $uploaded)
 	if(version_compare($installed, "1.2 Beta 1 Dev 2", "<")) {
 	    $db->add_column('wiki_permissions', 'can_unlock', "boolean NOT NULL DEFAULT '0'");
 		$db->update_query("wiki_permissions", array("can_unlock" => 1), "gid='3' OR gid='4' OR gid='6'");
+	}
+	if(version_compare($installed, "1.2 Beta 2 Dev 1", "<")) {
+	    $db->add_column('wiki_versions', 'tid', "int(11) NOT NULL DEFAULT '-1' AFTER wid");
+	    $db->modify_column('wiki_versions', 'wid', "int(11) NOT NULL DEFAULT '-1'");
 	}
 }
 
@@ -1028,7 +1111,7 @@ function wiki_templates($install=false)
 				<form action=\"wiki.php\" method=\"post\">
 				<input type=\"hidden\" name=\"action\" value=\"do_article_edit\" />
 				<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
-				<input type=\"hidden\" name=\"wid\" value=\"{\$wiki_id}\" />
+				<input type=\"hidden\" name=\"wid\" value=\"{\$wid}\" />
 
 				<table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 					<tr>
@@ -1087,7 +1170,7 @@ function wiki_templates($install=false)
 	<form action=\"wiki.php\" method=\"post\" enctype=\"multipart/form-data\">
 	<input type=\"hidden\" name=\"action\" value=\"do_article_delete\" />
 	<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
-	<input type=\"hidden\" name=\"wid\" value=\"{\$wiki_id}\" />
+	<input type=\"hidden\" name=\"wid\" value=\"{\$wid}\" />
 		<table width=\"100%\" border=\"0\" align=\"center\">
 			<tr>
 				<td valign=\"top\">
@@ -1172,7 +1255,7 @@ function wiki_templates($install=false)
 				<form action=\"wiki.php\" method=\"post\">
 				<input type=\"hidden\" name=\"action\" value=\"do_category_edit\" />
 				<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
-				<input type=\"hidden\" name=\"cid\" value=\"{\$wiki_id}\" />
+				<input type=\"hidden\" name=\"cid\" value=\"{\$cid}\" />
 
 				<table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 					<tr>
@@ -1210,7 +1293,7 @@ function wiki_templates($install=false)
 	<form action=\"wiki.php\" method=\"post\" enctype=\"multipart/form-data\">
 	<input type=\"hidden\" name=\"action\" value=\"do_category_delete\" />
 	<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
-	<input type=\"hidden\" name=\"cid\" value=\"{\$wiki_id}\" />
+	<input type=\"hidden\" name=\"cid\" value=\"{\$cid}\" />
 		<table width=\"100%\" border=\"0\" align=\"center\">
 			<tr>
 				<td valign=\"top\">

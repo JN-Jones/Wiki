@@ -1,5 +1,6 @@
 <?php
 $l['wiki'] = "Wiki";
+$l['wiki_deactivated'] = "The Wiki is deactivated at the moment and therefore not available";
 
 
 /* Nav */

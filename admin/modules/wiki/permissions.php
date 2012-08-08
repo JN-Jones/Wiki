@@ -36,6 +36,8 @@ if($mybb->request_method == "post")
 
 		$db->insert_query('wiki_permissions', $permRow);
 	}
+	wiki_cache_update("permissions");
+	
 	flash_message($lang->wiki_permissions_saved, 'success');
 	admin_redirect("index.php?module=wiki-permissions");
 }
@@ -45,17 +47,7 @@ $page->add_breadcrumb_item($lang->wiki_permissions, "index.php?module=wiki-permi
 
 $page->output_header($lang->wiki_permissions);
 
-$query = $db->query('SELECT
-	g.gid, g.title,
-	p.can_view, p.can_create, p.can_edit, p.can_search, p.can_version_view, p.can_version_restore, p.can_version_delete,
-	p.can_trash_view, p.can_trash_restore, p.can_trash_delete, p.can_edit_closed, p.can_view_hidden, p.can_edit_sort, p.can_unlock
-FROM
-	'.TABLE_PREFIX.'usergroups g
-LEFT OUTER JOIN
-	'.TABLE_PREFIX.'wiki_permissions p
-ON
-	g.gid = p.gid
-');
+$permissions = wiki_cache_load("permissions");
 
 $tabs = array(
 	"generall" => $lang->wiki_generall,
@@ -76,9 +68,10 @@ $table->construct_header($lang->wiki_can_create, array('style' => 'text-align: c
 $table->construct_header($lang->wiki_can_edit, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_search, array('style' => 'text-align: center;'));
 
-while($row = $db->fetch_array($query))
+foreach($groupscache as $group)
 {
-	$table->construct_cell(htmlspecialchars_uni($row['title']));
+	$row = $permissions[$group['gid']];
+	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_view'            , $row['can_view']            ), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_create' 		 , $row['can_create']    	   ), array('style' => 'text-align: center;'));
@@ -101,9 +94,10 @@ $table->construct_header($lang->wiki_can_version_view, array('style' => 'text-al
 $table->construct_header($lang->wiki_can_version_restore, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_version_delete, array('style' => 'text-align: center;'));
 
-foreach($rows as $row)
+foreach($groupscache as $group)
 {
-	$table->construct_cell(htmlspecialchars_uni($row['title']));
+	$row = $permissions[$group['gid']];
+	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_view'   , $row['can_version_view']   ), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_restore', $row['can_version_restore']), array('style' => 'text-align: center;'));
@@ -123,9 +117,10 @@ $table->construct_header($lang->wiki_can_trash_view, array('style' => 'text-alig
 $table->construct_header($lang->wiki_can_trash_restore, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_trash_delete, array('style' => 'text-align: center;'));
 
-foreach($rows as $row)
+foreach($groupscache as $group)
 {
-	$table->construct_cell(htmlspecialchars_uni($row['title']));
+	$row = $permissions[$group['gid']];
+	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_trash_view'      , $row['can_trash_view']      ), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_trash_restore'   , $row['can_trash_restore']   ), array('style' => 'text-align: center;'));
@@ -146,9 +141,10 @@ $table->construct_header($lang->wiki_can_view_hidden, array('style' => 'text-ali
 $table->construct_header($lang->wiki_can_edit_sort, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_unlock, array('style' => 'text-align: center;'));
 
-foreach($rows as $row)
+foreach($groupscache as $group)
 {
-	$table->construct_cell(htmlspecialchars_uni($row['title']));
+	$row = $permissions[$group['gid']];
+	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_edit_closed'     , $row['can_edit_closed']     ), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_view_hidden'     , $row['can_view_hidden']     ), array('style' => 'text-align: center;'));

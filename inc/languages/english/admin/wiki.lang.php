@@ -8,6 +8,7 @@ $l['wiki_article'] = "Entries";
 $l['wiki_permissions'] = "Permissions";
 $l['wiki_option'] = "Settings";
 $l['wiki_import'] = "Import";
+$l['wiki_cache'] = "Cache";
 $l['wiki_update'] = "Update";
 
 
@@ -107,11 +108,21 @@ $l['wiki_permissions_save'] = "Save permissions";
 $l['wiki_permissions_saved'] = "Permissions saved";
 
 
+/* Cache */
+$l['wiki_articles'] = "Articles";
+$l['wiki_categories'] = "Categories";
+$l['wiki_elements'] = "Number of elements";
+$l['wiki_reload'] = "Reload";
+$l['wiki_cache_empty'] = "The cache \"{1}\" don't exists or is empty";
+$l['wiki_cache_reload'] = "Cache \"{1}\" reloaded";
+
+
 /* Admin Permissions */
 $l['wiki_permission_index'] = "Can see the overview";
 $l['wiki_permission_article'] = "Can see all entries";
 $l['wiki_permission_permissions'] = "Can change permissions";
 $l['wiki_permission_import'] = "Can import entries and categories";
+$l['wiki_permission_cache'] = "Can manage the cache";
 $l['wiki_permission_update'] = "Can update the plugin";
 
 
