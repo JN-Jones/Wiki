@@ -95,6 +95,7 @@ $l['wiki_versions'] = "Versions";
 $l['wiki_can_version_view'] = "Can see versions";
 $l['wiki_can_version_restore'] = "Can restore versions";
 $l['wiki_can_version_delete'] = "Can delete versions";
+$l['wiki_can_version_diff'] = "Can view difference between versions";
 $l['wiki_trash'] = "Trashcan";
 $l['wiki_can_trash_view'] = "Cans see the trashcan";
 $l['wiki_can_trash_restore'] = "Can restore deleted articles";

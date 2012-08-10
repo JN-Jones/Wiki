@@ -1,7 +1,4 @@
 <?php
-//	uasort($articles, "wiki_sort");
-
-
 define("IN_MYBB", 1);
 define("THIS_SCRIPT", "wiki.php");
 
@@ -108,13 +105,15 @@ if($mybb->input['action']=="article_add") {
 	    $mybb->input['cid'] = $mybb->input['wiki_cat'];
 	}
 	$cats = wiki_cache_load("categories");
-	uasort($cats, "wiki_sort_title");
-	$wiki_cats="";
-	foreach($cats as $t) {
-   		if($t['id'] == $mybb->input['cid'])
-			$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
-		else
-			$wiki_cats.="<option value=\"".$t['id']."\">".$t['title']."</option>";
+	if($cats) {
+		uasort($cats, "wiki_sort_title");
+		$wiki_cats="";
+		foreach($cats as $t) {
+	   		if($t['id'] == $mybb->input['cid'])
+				$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
+			else
+				$wiki_cats.="<option value=\"".$t['id']."\">".$t['title']."</option>";
+		}
 	}
 
 	$codebuttons = build_mycode_inserter();
@@ -198,14 +197,16 @@ if($mybb->input['action']=="article_edit") {
 	    $wiki['cid'] = $mybb->input['wiki_cat'];
 	}
 	$cats = wiki_cache_load("categories");
-	uasort($cats, "wiki_sort_title");
-	$wiki_cats="";
-	foreach($cats as $t) {
-		if($wiki['cid']==$t['id']) {
-			$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
-			$category = $t;
-		} else
-			$wiki_cats.="<option value=\"".$t['id']."\">".$t['title']."</option>";
+	if($cats) {
+		uasort($cats, "wiki_sort_title");
+		$wiki_cats="";
+		foreach($cats as $t) {
+			if($wiki['cid']==$t['id']) {
+				$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
+				$category = $t;
+			} else
+				$wiki_cats.="<option value=\"".$t['id']."\">".$t['title']."</option>";
+		}
 	}
 	$codebuttons = build_mycode_inserter();
    	if($wiki['is_hidden'])
@@ -219,7 +220,7 @@ if($mybb->input['action']=="article_edit") {
 	eval("\$wiki_edit = \"".$templates->get("wiki_edit")."\";");
 
 	// Make navigation
-	add_breadcrumb($category['title'], wiki_get_category($category['id']));
+	wiki_create_navy($wiki, true, $cats);
 	add_breadcrumb($wiki['title'], wiki_get_article($wiki['id']));
 	add_breadcrumb($lang->wiki_nav_edit, "wiki.php?action=article_edit");
 	output_page($wiki_edit);
@@ -265,7 +266,7 @@ if($mybb->input['action']=="article_delete") {
 	$wiki = wiki_cache_load("articles", $wid);
 	$category = wiki_cache_load("categories", $wiki['cid']);
 	$wiki['cat'] = $category['title'];
-	
+
    	if($wiki['is_closed']) {
 	    if($wiki['uid'] != $mybb->user['uid'] && !wiki_is_allowed("can_edit_closed"))
 			error($lang->wiki_closed);
@@ -273,7 +274,7 @@ if($mybb->input['action']=="article_delete") {
 	eval("\$wiki_delete = \"".$templates->get("wiki_delete")."\";");
 
 	// Make navigation
-	add_breadcrumb($wiki['cat'], wiki_get_category($wiki['cid']));
+	wiki_create_navy($category);
 	add_breadcrumb($wiki['title'], wiki_get_article($wiki['id']));
 	add_breadcrumb($lang->wiki_nav_delete, "wiki.php?action=article_delete");
 	output_page($wiki_delete);
@@ -290,7 +291,8 @@ if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post")
 
 	if(!$errors) {
 		$insert_array = array(
-			'title' => $db->escape_string($mybb->input['wiki_name'])
+			'title' => $db->escape_string($mybb->input['wiki_name']),
+			'pid' => intval($mybb->input['wiki_cat'])
 		);
 		$nid = $db->insert_query('wiki_cats', $insert_array);
 
@@ -312,9 +314,20 @@ if($mybb->input['action']=="category_add") {
 
 	// Coming back to this page from an error?
 	if($errors)
-	{
 		$errors = inline_error($errors);
+
+	$cats = wiki_cache_load("categories");
+	if($cats) {
+		uasort($cats, "wiki_sort_title");
+		$wiki_cats = "<option value=\"-1\">-</option>";
+		foreach($cats as $t) {
+	   		if($t['id'] == $mybb->input['cid'])
+				$wiki_cats .= "<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
+			else
+				$wiki_cats .= "<option value=\"".$t['id']."\">".$t['title']."</option>";
+		}
 	}
+
 	eval("\$wiki_category_add = \"".$templates->get("wiki_category_add")."\";");
 	output_page($wiki_category_add);
 }
@@ -331,7 +344,8 @@ if($mybb->input['action'] == "do_category_edit" && $mybb->request_method == "pos
 
 	if(!$errors) {
 		$update_array = array(
-			'title' => $db->escape_string($mybb->input['wiki_name'])
+			'title' => $db->escape_string($mybb->input['wiki_name']),
+			'pid' => intval($mybb->input['wiki_cat'])
 		);
 
 		$db->update_query('wiki_cats', $update_array, "id='{$cid}'");
@@ -349,17 +363,26 @@ if($mybb->input['action']=="category_edit") {
 	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
 
+	$cats = wiki_cache_load("categories");
 	$cid = intval($mybb->input['cid']);
-	$wiki = wiki_cache_load("categories", $cid);
+	$wiki = $cats[$cid];
 	// Coming back to this page from an error?
 	if($errors)
-	{
 		$errors = inline_error($errors);
+
+	uasort($cats, "wiki_sort_title");
+	$wiki_cats = "<option value=\"-1\">-</option>";
+	foreach($cats as $t) {
+   		if($t['id'] == $wiki['cid'])
+			$wiki_cats .= "<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
+		else
+			$wiki_cats .= "<option value=\"".$t['id']."\">".$t['title']."</option>";
 	}
+
 	eval("\$wiki_category_edit = \"".$templates->get("wiki_category_edit")."\";");
 
 	// Make navigation
-	add_breadcrumb($wiki['title'], wiki_get_category($wiki['id']));
+	wiki_create_navy($wiki, false, $cats);
 	add_breadcrumb($lang->wiki_nav_edit, "wiki.php?action=category_edit");
 	output_page($wiki_category_edit);
 }
@@ -378,6 +401,7 @@ if($mybb->input['action'] == "do_category_delete" && $mybb->request_method == "p
 	}
 
 	$db->delete_query("wiki_cats", "id='{$cid}'");
+	$db->delete_query("wiki_cats", "pid='{$cid}'");
 	$db->delete_query("wiki", "cid='{$cid}'");
 
 	wiki_cache_update("articles");
@@ -395,7 +419,7 @@ if($mybb->input['action']=="category_delete") {
 	$wiki = wiki_cache_load("categories", $cid);
 	eval("\$wiki_category_delete = \"".$templates->get("wiki_category_delete")."\";");
 
-	add_breadcrumb($wiki['title'], wiki_get_category($wiki['id']));
+	wiki_create_navy($wiki);
 	add_breadcrumb($lang->wiki_nav_category_delete, "wiki.php?action=category_delete");
 	output_page($wiki_category_delete);
 }
@@ -478,21 +502,21 @@ if($mybb->input['action']=="trash") {
 			$trash=array_merge($trash, $db->fetch_array($query));
 			$trash['id']=$entry['id'];
 			$wiki_trash = WIKI_TRASH;
-	
+
 			if(wiki_is_allowed("can_trash_restore"))
 			    eval("\$restore = \"".$templates->get("wiki_trash_table_element_restore")."\";");
 			if(wiki_is_allowed("can_trash_delete"))
 			    eval("\$delete = \"".$templates->get("wiki_trash_table_element_delete")."\";");
-	
+
 			eval("\$wiki_trash_table .= \"".$templates->get("wiki_trash_table_element")."\";");
 		}
-	
+
 	    if(wiki_is_allowed("can_trash_restore"))
 		    eval("\$restore = \"".$templates->get("wiki_trash_table_restore")."\";");
 		if(wiki_is_allowed("can_trash_delete"))
 		    eval("\$delete = \"".$templates->get("wiki_trash_table_delete")."\";");
 	}
-	
+
 	eval("\$wiki_trash_table= \"".$templates->get("wiki_trash_table")."\";");
 	if($errors)
 		$errors = inline_error($errors);
@@ -567,7 +591,7 @@ if($mybb->input['action']=="show_version") {
 	$awiki = wiki_cache_load("articles", $wid);
 	$category = wiki_cache_load("categories", $awiki['cid']);
 	$awiki['cat'] = $category['title'];
-	
+
 	if($wiki['is_hidden']) {
 		eval("\$wiki['hidden'] = \"".$templates->get("wiki_header_hidden")."\";");
 	}
@@ -580,11 +604,100 @@ if($mybb->input['action']=="show_version") {
 	$user_header = createHeader($user, $wiki, false);
 	eval("\$showversion = \"".$templates->get("wiki_text")."\";");
 
-	add_breadcrumb($awiki['cat'], wiki_get_category($awiki['cid']));
+	wiki_create_navy($category);
 	add_breadcrumb($awiki['title'], wiki_get_article($awiki['id']));
 	add_breadcrumb($lang->wiki_versions, wiki_get_versions($awiki['id']));
 	add_breadcrumb($wiki['formateddate'], wiki_get_version($vid));
 	output_page($showversion);
+}
+if($mybb->input['action']=="version_diff") {
+	if(!wiki_is_allowed("can_version_diff"))
+	    error_no_permission();
+	verify_post_check($mybb->input['my_post_key']);
+
+	if($mybb->input['version1'] == $mybb->input['version2'])
+	    $errors[] = $lang->wiki_versions_diff_same;
+	
+	$wid = intval($mybb->input['wid']);
+	
+	$versions = wiki_cache_load("versions");
+	uasort($versions, "wiki_sort_versions_date");
+	$versions = array_reverse($versions, true);
+
+	$wiki = wiki_cache_load("articles", $wid);
+	$wiki['date'] = date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
+    if($mybb->input['version1'] == "w") {
+		$v1['entry'] = $wiki;
+		$versions1 = "<option value=\"w\" selected=\"selected\">{$v1['entry']['date']}</option>";
+	} else {
+		$v1 = $versions[$mybb->input['version1']];
+		$v1['entry'] = @unserialize($v1['entry']);
+		$v1['entry']['date'] = date($mybb->settings['dateformat'], $v1['entry']['date'])." ".date($mybb->settings['timeformat'], $v1['entry']['date']);
+		$versions1 = "<option value=\"w\">{$wiki['date']}</option>";
+	}
+    if($mybb->input['version2'] == "w") {
+		$v2['entry'] = $wiki;
+		$versions2 = "<option value=\"w\" selected=\"selected\">{$v2['entry']['date']}</option>";
+	} else {
+		$v2 = $versions[$mybb->input['version2']];
+		$v2['entry'] = @unserialize($v2['entry']);
+		$v2['entry']['date'] = date($mybb->settings['dateformat'], $v2['entry']['date'])." ".date($mybb->settings['timeformat'], $v2['entry']['date']);
+		$versions2 = "<option value=\"w\">{$wiki['date']}</option>";
+	}
+
+	if(!$errors) {		
+		if($v2['entry']['date'] > $v1['entry']['date']) {
+			$temp = $v1; $v1 = $v2; $v2 = $temp;
+		}
+
+		$lang->wiki_versions_diff_between = $lang->sprintf($lang->wiki_versions_diff_between, $v1['entry']['date'], $v2['entry']['date']);
+
+		$v1['entry']['text'] = explode(' ', $v1['entry']['text']);
+		$v2['entry']['text'] = explode(' ', $v2['entry']['text']);
+
+		$diff = diff($v2['entry']['text'], $v1['entry']['text']);
+
+		$diffStr = '';
+
+		foreach($diff as $segment) {
+			if(is_array($segment)) {
+				if(count($segment['d']))
+					$diffStr .= '<span class="wiki-diff-deleted">'.nl2br(htmlspecialchars_uni(implode(' ', $segment['d']))).'</span>';
+
+				if(count($segment['i']))
+					$diffStr .= '<span class="wiki-diff-inserted">'.nl2br(htmlspecialchars_uni(implode(' ', $segment['i']))).'</span>';
+			} else {
+				$diffStr .= nl2br(htmlspecialchars_uni($segment));
+			}
+		}
+		$diff = $diffStr;
+		
+		foreach($versions as $version) {
+			if($version['wid'] != $wid)
+			    continue;
+			$version['entry'] = @unserialize($version['entry']);
+			$version['entry']['date'] = date($mybb->settings['dateformat'], $version['entry']['date'])." ".date($mybb->settings['timeformat'], $version['entry']['date']);
+			if($version['id'] == $v1['id'])
+			    $versions1 .= "<option value=\"{$version['id']}\" selected=\"selected\">{$version['entry']['date']}</option>";
+			else
+			    $versions1 .= "<option value=\"{$version['id']}\">{$version['entry']['date']}</option>";
+			if($version['id'] == $v2['id'])
+			    $versions2 .= "<option value=\"{$version['id']}\" selected=\"selected\">{$version['entry']['date']}</option>";
+			else
+			    $versions2 .= "<option value=\"{$version['id']}\">{$version['entry']['date']}</option>";
+		}
+				
+		eval("\$diffs = \"".$templates->get("wiki_versions_diff_panel")."\";");
+		eval("\$version_diff = \"".$templates->get("wiki_versions_diff")."\";");
+		wiki_create_navy($wiki, true);
+		add_breadcrumb($wiki['title'], wiki_get_article($wiki['id']));
+		add_breadcrumb($lang->wiki_versions, wiki_get_versions($wiki['id']));
+		add_breadcrumb($v1['entry']['date']." - ".$v2['entry']['date']);
+		output_page($version_diff);
+	} else {
+		$mybb->input['wid'] = $wid;
+		$mybb->input['action']="versions";
+	}
 }
 if($mybb->input['action']=="versions") {
 	if(!wiki_is_allowed("can_version_view"))
@@ -599,48 +712,58 @@ if($mybb->input['action']=="versions") {
 	if($errors)
 		$errors = inline_error($errors);
 	$versions = wiki_cache_load("versions");
-	uasort($versions, "wiki_sort_versions_date");
-	$versions = array_reverse($versions, true);	
-	foreach($versions as $wiki) {
-		if($wiki['wid'] != $wid)
-		    continue;
-		$vid=$wiki['id'];
-		$wiki=@unserialize($wiki['entry']);
-		$uid=intval($wiki['uid']);
-		$wiki['date']=date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
-		$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
-		$user = $db->fetch_array($user);
-		if($user['username'])
-		{
-			if(!$user['displaygroup'])
+	if($versions) {
+		$wiki['date']=date($mybb->settings['dateformat'], $awiki['date'])." ".date($mybb->settings['timeformat'], $awiki['date']);
+		$versions1 = "<option value=\"w\">{$wiki['date']}</option>";
+		uasort($versions, "wiki_sort_versions_date");
+		$versions = array_reverse($versions, true);
+		foreach($versions as $wiki) {
+			if($wiki['wid'] != $wid)
+			    continue;
+			$vid=$wiki['id'];
+			$wiki=@unserialize($wiki['entry']);
+			$uid=intval($wiki['uid']);
+			$wiki['date']=date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
+			$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
+			$user = $db->fetch_array($user);
+			if($user['username'])
 			{
-				$user['displaygroup'] = $user['usergroup'];
+				if(!$user['displaygroup'])
+				{
+					$user['displaygroup'] = $user['usergroup'];
+				}
+				$usergroup = $groupscache[$user['displaygroup']];
 			}
-			$usergroup = $groupscache[$user['displaygroup']];
-		}
-		else
-		{
-			$usergroup = $groupscache[1];
-		}
-//		$post['profilelink_plain'] = get_profile_link($wiki['uid']);
-		$user['username_formatted'] = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
-		$wiki['user'] = build_profile_link($user['username_formatted'], $user['uid']);
-		$wiki_version = wiki_get_version($vid);
+			else
+			{
+				$usergroup = $groupscache[1];
+			}
+			$user['username_formatted'] = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
+			$wiki['user'] = build_profile_link($user['username_formatted'], $user['uid']);
+			$wiki_version = wiki_get_version($vid);
+	
+			if(wiki_is_allowed("can_version_restore"))
+				eval("\$restore = \"".$templates->get("wiki_versions_table_restore")."\";");
+			if(wiki_is_allowed("can_version_delete"))
+				eval("\$delete = \"".$templates->get("wiki_versions_table_delete")."\";");
+	
+			eval("\$wiki_table .= \"".$templates->get("wiki_versions_table")."\";");
 
-		if(wiki_is_allowed("can_version_restore"))
-			eval("\$restore = \"".$templates->get("wiki_versions_table_restore")."\";");
-		if(wiki_is_allowed("can_version_delete"))
-			eval("\$delete = \"".$templates->get("wiki_versions_table_delete")."\";");
-
-		eval("\$wiki_table .= \"".$templates->get("wiki_versions_table")."\";");
+			if(wiki_is_allowed("can_version_diff"))
+			    $versions1 .= "<option value=\"$vid\">{$wiki['date']}</option>";
+		}
 	}
-	if(wiki_is_allowed("can_version_restore"))
+	if(wiki_is_allowed("can_version_diff")) {
+		$versions2 = $versions1;
+		eval("\$diffs = \"".$templates->get("wiki_versions_diff_panel")."\";");
+	}
+   	if(wiki_is_allowed("can_version_restore"))
 		eval("\$restore = \"".$templates->get("wiki_versions_restore")."\";");
 	if(wiki_is_allowed("can_version_delete"))
 		eval("\$delete = \"".$templates->get("wiki_versions_delete")."\";");
 	eval("\$wiki_versions = \"".$templates->get("wiki_versions")."\";");
 
-	add_breadcrumb($awiki['cat'], wiki_get_category($awiki['cid']));
+	wiki_create_navy($category);
 	add_breadcrumb($awiki['title'], wiki_get_article($wid));
 	add_breadcrumb($lang->wiki_versions, wiki_get_versions($wid));
 	output_page($wiki_versions);
@@ -664,18 +787,20 @@ if($mybb->input['action']=="unlock") {
 if($mybb->input['action']=="new") {
 	add_breadcrumb($lang->wiki_nav_new, WIKI_NEW);
 	$articles = wiki_cache_load("articles");
-	uasort($articles, "wiki_sort_date");
-	$articles = array_reverse($articles, true);
-	array_splice($articles, 10);
-	foreach($articles as $wiki) {
-		$uid = intval($wiki['uid']);
-		$user_query = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
-		$user=$db->fetch_array($user_query);
-		$username_formatted = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
-		$wiki['user'] = build_profile_link($username_formatted, $user['uid']);
-		$wiki['date'] = date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
-		$wiki_article = wiki_get_article($wiki['id']);
-		eval("\$article_table .= \"".$templates->get("wiki_new_element")."\";");
+	if($articles) {
+		uasort($articles, "wiki_sort_date");
+		$articles = array_reverse($articles, true);
+		array_splice($articles, 10);
+		foreach($articles as $wiki) {
+			$uid = intval($wiki['uid']);
+			$user_query = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
+			$user=$db->fetch_array($user_query);
+			$username_formatted = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
+			$wiki['user'] = build_profile_link($username_formatted, $user['uid']);
+			$wiki['date'] = date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
+			$wiki_article = wiki_get_article($wiki['id']);
+			eval("\$article_table .= \"".$templates->get("wiki_new_element")."\";");
+		}
 	}
 	eval("\$wiki_new = \"".$templates->get("wiki_new")."\";");
 	output_page($wiki_new);
@@ -751,48 +876,89 @@ if($mybb->input['action']=="search") {
 if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 	if(isset($mybb->input['cid']) && $mybb->input['cid']!="") {
 		$cid=intval($mybb->input['cid']);
-		$category = wiki_cache_load("categories", $cid);
-		add_breadcrumb($category['title'], wiki_get_category($category['id']));
+		$categorys = wiki_cache_load("categories");
+		$category = $categorys[$cid];
+		wiki_create_navy($category, false, $categorys);
 
 		$moderation = wiki_is_allowed("can_unlock");
 		$articles = wiki_cache_load("articles");
-		uasort($articles, "wiki_sort_sort");
 
-		$wiki_table="";
-		foreach($articles as $wiki) {
-			if($wiki['cid'] != $cid)
-			    continue;
-			if($wiki['awaiting_moderation'] && !$moderation)
-			    continue;
-			
-       		if($wiki['link'])
-			    $wiki_title = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
-			else if($wiki['text'])
-				$wiki_title = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
-			else
-				$wiki_title = $wiki['title'];
-			$background="";
-			$wiki_short = $wiki['short'];
-	  		if($wiki['awaiting_moderation'])
-			    $background="#6EFF6E";
-
-			if(wiki_is_allowed("can_edit_sort"))
-				eval("\$additional['sort'] = \"".$templates->get("wiki_category_table_sort")."\";");
-
-			if(wiki_is_allowed("can_edit"))
-				eval("\$additional['control'] = \"".$templates->get("wiki_category_table_control")."\";");
-
-       		if(!$wiki['is_hidden'] || wiki_is_allowed("can_view_hidden") || $wiki['uid'] == $mybb->user['uid'])
-				eval("\$wiki_table .= \"".$templates->get("wiki_category_table")."\";");
+		if($categorys) {
+			uasort($categorys, "wiki_sort_sort");
+			$wiki_table="";
+			foreach($categorys as $t) {
+				if($t['pid'] != $category['id'])
+				    continue;
+		
+				$pcid=intval($t['id']);
+				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($pcid).'">'.$t['title'].'</a>';
+				$category_number = 0;
+				foreach($articles as $article) {
+					if($article['cid'] == $pcid)
+					    $category_number++;
+				}
+				if(wiki_is_allowed("can_edit_sort")) {
+					$category_sort = $t['Sort'];
+					eval("\$additional['sort'] = \"".$templates->get("wiki_table_sort")."\";");
+				}
+		
+				if(wiki_is_allowed("can_edit"))
+					eval("\$additional['control'] = \"".$templates->get("wiki_table_control")."\";");
+		
+				eval("\$wiki_table .= \"".$templates->get("wiki_table_element")."\";");
+			}
+			if($wiki_table != "") {
+				if(wiki_is_allowed("can_edit_sort")) {
+					$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
+					eval("\$additional['sort'] = \"".$templates->get("wiki_sort")."\";");
+				}
+		
+				if(wiki_is_allowed("can_edit"))
+					eval("\$additional['control'] = \"".$templates->get("wiki_control")."\";");
+				eval("\$wiki_category = \"".$templates->get("wiki_table")."\";");
+			}
 		}
 
-		if(wiki_is_allowed("can_create"))
-		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
+		if($articles) {
+			uasort($articles, "wiki_sort_sort");
+			$wiki_table="";
+			foreach($articles as $wiki) {
+				if($wiki['cid'] != $cid)
+				    continue;
+				if($wiki['awaiting_moderation'] && !$moderation)
+				    continue;
+	
+	       		if($wiki['link'])
+				    $wiki_title = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
+				else if($wiki['text'])
+					$wiki_title = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
+				else
+					$wiki_title = $wiki['title'];
+				$background="";
+				$wiki_short = $wiki['short'];
+		  		if($wiki['awaiting_moderation'])
+				    $background="#6EFF6E";
+	
+				if(wiki_is_allowed("can_edit_sort"))
+					eval("\$additional['sort'] = \"".$templates->get("wiki_category_table_sort")."\";");
+	
+				if(wiki_is_allowed("can_edit"))
+					eval("\$additional['control'] = \"".$templates->get("wiki_category_table_control")."\";");
+	
+	       		if(!$wiki['is_hidden'] || wiki_is_allowed("can_view_hidden") || $wiki['uid'] == $mybb->user['uid'])
+					eval("\$wiki_table .= \"".$templates->get("wiki_category_table")."\";");
+			}
+		}
+
+		if(wiki_is_allowed("can_create")) {
+		    $category_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_add&cid={$cid}\" title=\"{$lang->wiki_nav_category_add}\">{$lang->wiki_nav_category_add}</a> | ";
+		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
+		}
 		if(wiki_is_allowed("can_edit")) {
 			if(isset($article_add))
 			    $article_add .= " | ";
-		    $article_edit = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_edit&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_category_edit}\">{$lang->wiki_nav_category_edit}</a> | ";
-			$article_delete = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_delete&cid={$wiki_cid}\" title=\"{$lang->wiki_nav_category_delete}\">{$lang->wiki_nav_category_delete}</a>";
+		    $article_edit = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_edit&cid={$cid}\" title=\"{$lang->wiki_nav_category_edit}\">{$lang->wiki_nav_category_edit}</a> | ";
+			$article_delete = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=category_delete&cid={$cid}\" title=\"{$lang->wiki_nav_category_delete}\">{$lang->wiki_nav_category_delete}</a>";
 			eval("\$additional['control'] = \"".$templates->get("wiki_category_control")."\";");
 		}
 
@@ -831,11 +997,13 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
      	if(wiki_is_allowed("can_version_view")) {
      		$arversions = wiki_cache_load("versions");
      		$vnumber = 0;
-	 		foreach($arversions as $version) {
-				if($version['wid'] == $id)
-				    $vnumber++;
+			if($arversions) {
+		 		foreach($arversions as $version) {
+					if($version['wid'] == $id)
+					    $vnumber++;
+				}
 			}
-     		    
+
 			$wiki_versions = wiki_get_versions($id);
 			if($vnumber!=0)
 				eval("\$versions = \"".$templates->get("wiki_panel_versions")."\";");
@@ -867,31 +1035,38 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		$query = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 		$user=$db->fetch_array($query);
 		$user_header = createHeader($user, $wiki);
-		add_breadcrumb($category['title'], wiki_get_category($category['id']));
+		wiki_create_navy($category);
 		add_breadcrumb($wiki_title, wiki_get_article($id));
 		eval("\$showwiki = \"".$templates->get("wiki_text")."\";");
 	} else {
 		$category = wiki_cache_load("categories");
 		$articles = wiki_cache_load("articles");
-		uasort($category, "wiki_sort_sort");
-		$wiki_table="";
-		foreach($category as $t) {
-			$cid=intval($t['id']);
-			$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
-			$category_number = 0;
-			foreach($articles as $article) {
-				if($article['cid'] == $cid)
-				    $category_number++;
+		if($category) {
+			uasort($category, "wiki_sort_sort");
+			$wiki_table="";
+			foreach($category as $t) {
+				if($t['pid'] != -1)
+				    continue;
+	
+				$cid=intval($t['id']);
+				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
+				$category_number = 0;
+				if($articles) {
+					foreach($articles as $article) {
+						if($article['cid'] == $cid)
+						    $category_number++;
+					}
+				}
+				if(wiki_is_allowed("can_edit_sort")) {
+					$category_sort = $t['Sort'];
+					eval("\$additional['sort'] = \"".$templates->get("wiki_table_sort")."\";");
+				}
+	
+				if(wiki_is_allowed("can_edit"))
+					eval("\$additional['control'] = \"".$templates->get("wiki_table_control")."\";");
+	
+				eval("\$wiki_table .= \"".$templates->get("wiki_table_element")."\";");
 			}
-			if(wiki_is_allowed("can_edit_sort")) {
-				$category_sort = $t['Sort'];
-				eval("\$additional['sort'] = \"".$templates->get("wiki_table_sort")."\";");
-			}
-
-			if(wiki_is_allowed("can_edit"))
-				eval("\$additional['control'] = \"".$templates->get("wiki_table_control")."\";");
-
-			eval("\$wiki_table .= \"".$templates->get("wiki_table")."\";");
 		}
 
 		if(wiki_is_allowed("can_trash_view")) {
@@ -913,12 +1088,12 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 					$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 					$trash=array_merge($trash, $db->fetch_array($query));
 					$trash['id']=$entry['id'];
-	
+
 					if(wiki_is_allowed("can_trash_restore"))
 					    eval("\$restore = \"".$templates->get("wiki_trash_table_element_restore")."\";");
 					if(wiki_is_allowed("can_trash_delete"))
 					    eval("\$delete = \"".$templates->get("wiki_trash_table_element_delete")."\";");
-	
+
 					eval("\$wiki_trash_table .= \"".$templates->get("wiki_trash_table_element")."\";");
 				}
 				if(wiki_is_allowed("can_trash_restore"))
@@ -953,6 +1128,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		if(wiki_is_allowed("can_edit"))
 			eval("\$additional['control'] = \"".$templates->get("wiki_control")."\";");
 
+		eval("\$wiki_category = \"".$templates->get("wiki_table")."\";");
 		eval("\$showwiki = \"".$templates->get("wiki")."\";");
 	}
 	output_page($showwiki);

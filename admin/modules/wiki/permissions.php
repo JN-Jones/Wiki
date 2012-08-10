@@ -25,6 +25,7 @@ if($mybb->request_method == "post")
 				"can_version_view" => in_array("can_version_view", $perms),
 				"can_version_restore" => in_array("can_version_restore", $perms),
 				"can_version_delete" => in_array("can_version_delete", $perms),
+				"can_version_diff" => in_array("can_version_diff", $perms),
 				"can_trash_view" => in_array("can_trash_view", $perms),
 				"can_trash_restore" => in_array("can_trash_restore", $perms),
 				"can_trash_delete" => in_array("can_trash_delete", $perms),
@@ -93,6 +94,7 @@ $table->construct_header($lang->wiki_group, array('style' => 'text-align: center
 $table->construct_header($lang->wiki_can_version_view, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_version_restore, array('style' => 'text-align: center;'));
 $table->construct_header($lang->wiki_can_version_delete, array('style' => 'text-align: center;'));
+$table->construct_header($lang->wiki_can_version_diff, array('style' => 'text-align: center;'));
 
 foreach($groupscache as $group)
 {
@@ -102,6 +104,7 @@ foreach($groupscache as $group)
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_view'   , $row['can_version_view']   ), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_restore', $row['can_version_restore']), array('style' => 'text-align: center;'));
 	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_delete' , $row['can_version_delete'] ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_diff' 	, $row['can_version_diff'] 	 ), array('style' => 'text-align: center;'));
 
 	$table->construct_row();
 }

@@ -85,8 +85,13 @@ $l['wiki_trash_unknown_cat'] = "*Unbekannt*";
 
 
 /* Versionen */
+$l['wiki_version'] = "Version";
 $l['wiki_versions'] = "Versionen";
 $l['wiki_versions_of'] = "Versionen von";
+$l['wiki_versions_diff'] = "Unterschiede zwischen welchen Versionen zeigen?";
+$l['wiki_versions_diff_submit'] = "Anzeigen";
+$l['wiki_versions_diff_same'] = "Du kannst nicht den Unterschied zwischen den gleichen Versionen anzeigen";
+$l['wiki_versions_diff_between'] = "Unterschied zwischen den Versionen vom {1} und {2}";
 $l['wiki_version_delete'] = "Version endgültig löschen";
 
 

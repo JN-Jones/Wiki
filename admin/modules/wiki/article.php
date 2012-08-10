@@ -20,26 +20,36 @@ if($mybb->input['action']=="export") {
 		$art = wiki_cache_load("articles", $mybb->input['art']);
 		$data['art'][] = $art;
 		$versions = wiki_cache_load("versions");
-		foreach($versions as $version) {
-			if($version['wid'] != $mybb->input['art'])
-			    continue;
-			$data['versions'][] = $version;
+		if($versions) {
+			foreach($versions as $version) {
+				if($version['wid'] != $mybb->input['art'])
+				    continue;
+				$data['versions'][] = $version;
+			}
 		}
 		$filename = "wiki_art_".$data['art'][0]['title'];
 		$comment = $lang->wiki_export_art_comment;
 	} else {
 		$articles = wiki_cache_load("articles");
-		foreach($articles as $art)
-			$data['art'][] = $art;
+		if($articles) {
+			foreach($articles as $art)
+				$data['art'][] = $art;
+		}
 		$category = wiki_cache_load("categories");
-		foreach($category as $cat)
-			$data['cats'][] = $cat;
+		if($category) {
+			foreach($category as $cat)
+				$data['cats'][] = $cat;
+		}
 		$trashs = wiki_cache_load("trash");
-		foreach($trashs as $trash)
-			$data['trash'][] = $trash;
+		if($trashs) {
+    		foreach($trashs as $trash)
+				$data['trash'][] = $trash;
+		}
 		$versions = wiki_cache_load("versions");
-		foreach($versions as $version)
-			$data['versions'][] = $version;
+		if($versions) {
+    		foreach($versions as $version)
+				$data['versions'][] = $version;
+		}
 		$filename = "wiki";
 		$comment = $lang->wiki_export_comment;
 	}
@@ -68,9 +78,11 @@ if($mybb->input['action']=="cat") {
 		uasort($category, "wiki_sort_sort");
 		foreach($category as $t) {
      		$t['number'] = 0;
-	 		foreach($articles as $article) {
-				if($article['cid'] == $t['id'])
-				    $t['number']++;
+     		if($articles) {
+		 		foreach($articles as $article) {
+					if($article['cid'] == $t['id'])
+					    $t['number']++;
+				}
 			}
 
 			$table->construct_cell("<a href=\"index.php?module=wiki-article&cat={$t['id']}\">{$t['title']}</a>", array('width' => '50%'));

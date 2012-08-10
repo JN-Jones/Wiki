@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2 Beta 2",
+		"version"		=> "1.2 Beta 3",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -48,7 +48,7 @@ function wiki_install()
     }
 
 	wiki_settings(true);
-	wiki_templates(trie);
+	wiki_templates(true);
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
@@ -67,6 +67,7 @@ function wiki_install()
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_cats` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
+				`pid` int(11) NOT NULL default '-1',
 				`title` varchar(50) DEFAULT NULL,
 				`Sort` int NOT NULL default '0',
 	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
@@ -94,6 +95,7 @@ function wiki_install()
 		can_version_view boolean NOT NULL DEFAULT 0,
 		can_version_restore boolean NOT NULL DEFAULT 0,
 		can_version_delete boolean NOT NULL DEFAULT 0,
+		can_version_diff boolean NOT NULL DEFAULT 0,
 		can_trash_view boolean NOT NULL DEFAULT 0,
 		can_trash_restore boolean NOT NULL DEFAULT 0,
 		can_trash_delete boolean NOT NULL DEFAULT 0,
@@ -104,19 +106,20 @@ function wiki_install()
 	)');
 
 	$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
-			(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort)
+			(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_version_diff, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort, can_unlock)
 		VALUES
-			(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-			(2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-			(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+			(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(2, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
+			(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 		');
 
 	$PL->cache_update("wiki_version", $plugininfo['version']);
 	$PL->cache_update("wiki_pl_version", "8");
+	wiki_cache_update("permissions");
 }
 
 function wiki_is_installed()
@@ -288,20 +291,20 @@ function wiki_mycode_create(array $match)
 	    $show=$match[1];
 	$found = array();
 	$articles = wiki_cache_load("articles");
-	foreach($articles as $article) {
-		if($article['title'] == $name)
-		    $found[] = $article;
+	if($articles) {
+		foreach($articles as $article) {
+			if($article['title'] == $name)
+			    $found[] = $article;
+		}
+		if(sizeOf($found) == 0)
+		    return $name;
+		$wiki = $found[0];
+		if($wiki['link'])
+		    return '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank" title="'.$wiki['short'].'">'.$show.'</a>';
+		elseif($wiki['text'])
+			return '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'" title="'.$wiki['short'].'">'.$show.'</a>';
 	}
-	if(sizeOf($found) == 0)
-	    return $name;
-	$wiki = $found[0];
-	if($wiki['link'])
-	    return '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank" title="'.$wiki['short'].'">'.$show.'</a>';
-	elseif($wiki['text'])
-		return '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'" title="'.$wiki['short'].'">'.$show.'</a>';
-	else
-		return $show;
-
+	return $show;
 }
 
 function wiki_autolink($message)
@@ -310,14 +313,16 @@ function wiki_autolink($message)
 	if($mybb->settings['wiki_autolink']=="0")
 	    return $message;
 	$articles = wiki_cache_load("articles");
-	foreach($articles as $wiki) {
-    	if($wiki['link'])
-		    $link = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
-		elseif($wiki['text'])
-			$link = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
-		else
-			$link = $wiki['title'];
-		$message=str_replace(" ".$wiki['title']." ", " ".$link." ", $message);
+	if($articles) {
+		foreach($articles as $wiki) {
+	    	if($wiki['link'])
+			    $link = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
+			elseif($wiki['text'])
+				$link = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
+			else
+				$link = $wiki['title'];
+			$message=str_replace(" ".$wiki['title']." ", " ".$link." ", $message);
+		}
 	}
 	return $message;
 }
@@ -485,6 +490,61 @@ function wiki_sort_versions_date($a, $b)
 	    return 1;
 	return ($e1['date'] < $e2['date']) ? 0 : 2;
 }
+
+function wiki_create_navy($cat, $article = false, $categories = false)
+{
+	if(!$categories)
+	    $categories = wiki_cache_load("categories");
+	if($article)
+	    $cat = $categories[$cat['cid']];
+   	if(!is_array($cat))
+	    $cat = $categories[$cat];
+	
+	$parent = true;
+	$cats = array();
+	while($parent)
+	{
+		$parent = false;
+		$cats[] = $cat;
+		if($cat['pid'] != -1) {
+		    $cat = $categories[$cat['pid']];
+		    $parent = true;
+		}
+	}
+	$cats = array_reverse($cats);
+	
+	foreach($cats as $cat)
+	{
+		add_breadcrumb($cat['title'], wiki_get_category($cat['id']));
+	}
+}
+
+/*
+Paul's Simple Diff Algorithm v 0.1
+(C) Paul Butler 2007 <http://www.paulbutler.org/>
+May be used and distributed under the zlib/libpng license. */
+
+function diff($old, $new){
+	foreach($old as $oindex => $ovalue){
+		$nkeys = array_keys($new, $ovalue);
+			foreach($nkeys as $nindex){
+			$matrix[$oindex][$nindex] = isset($matrix[$oindex - 1][$nindex - 1]) ?
+			$matrix[$oindex - 1][$nindex - 1] + 1 : 1;
+			if($matrix[$oindex][$nindex] > $maxlen){
+				$maxlen = $matrix[$oindex][$nindex];
+				$omax = $oindex + 1 - $maxlen;
+				$nmax = $nindex + 1 - $maxlen;
+			}
+		}
+	}
+	if($maxlen == 0) return array(array('d'=>$old, 'i'=>$new));
+	return array_merge(
+		diff(array_slice($old, 0, $omax), array_slice($new, 0, $nmax)),
+		array_slice($new, $nmax, $maxlen),
+		diff(array_slice($old, $omax + $maxlen), array_slice($new, $nmax + $maxlen)));
+}
+
+
 
 function createHeader($user, $wiki, $showbuttons=true)
 {
@@ -669,6 +729,13 @@ function wiki_update($installed, $uploaded)
 	    $db->add_column('wiki_versions', 'tid', "int(11) NOT NULL DEFAULT '-1' AFTER wid");
 	    $db->modify_column('wiki_versions', 'wid', "int(11) NOT NULL DEFAULT '-1'");
 	}
+	if(version_compare($installed, "1.2 Beta 3 Dev 1", "<")) {
+	    $db->add_column('wiki_cats', 'pid', "int(11) NOT NULL DEFAULT '-1' AFTER id");
+	}
+	if(version_compare($installed, "1.2 Beta 3 Dev 3", "<")) {
+	    $db->add_column('wiki_permissions', 'can_version_diff', "boolean NOT NULL DEFAULT '0' AFTER can_version_delete");
+		$db->update_query("wiki_permissions", array("can_version_diff" => 1), "gid='2' OR gid='3' OR gid='4' OR gid='6'");
+	}
 }
 
 function wiki_settings($install=false)
@@ -743,6 +810,22 @@ function wiki_templates($install=false)
 <body>
 {\$header}
 {\$wiki_header}
+{\$wiki_category}
+{\$wiki_trash}
+{\$footer}
+</body>
+</html>",
+				/* Zusätzliche Spalten für Moderatoren */
+					   "sort" => "
+		<td class=\"tcat\" width=\"5%\" >
+			<span class=\"smalltext\"><strong>{\$lang->order}</strong></span>
+		</td>",
+						"control" => "
+		<td class=\"tcat\" width=\"5%\" colspan=\"2\">
+			<span class=\"smalltext\"><strong>{\$lang->wiki_control}</strong></span>
+		</td>",
+				/* Kategorie Tabelle */
+						"table" => "
 <form action=\"wiki.php\" method=\"post\">
 <input type=\"hidden\" name=\"action\" value=\"do_save_order\" />
 <input type=\"hidden\" name=\"order\" value=\"category\" />
@@ -765,22 +848,9 @@ function wiki_templates($install=false)
 	{\$wiki_table}
 </table>
 {\$submit}
-</form>
-{\$wiki_trash}
-{\$footer}
-</body>
-</html>",
-				/* Zusätzliche Spalten für Moderatoren */
-					   "sort" => "
-		<td class=\"tcat\" width=\"5%\" >
-			<span class=\"smalltext\"><strong>{\$lang->order}</strong></span>
-		</td>",
-						"control" => "
-		<td class=\"tcat\" width=\"5%\" colspan=\"2\">
-			<span class=\"smalltext\"><strong>{\$lang->wiki_control}</strong></span>
-		</td>",
+</form>",
 				/* Elemente für Kategorie Hauptseite */
-                       "table" => "
+                       "table_element" => "
 <tr>
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><strong>{\$category_title}</strong></span>
@@ -822,6 +892,7 @@ function wiki_templates($install=false)
 <body>
 {\$header}
 {\$wiki_header}
+{\$wiki_category}
 <form action=\"wiki.php\" method=\"post\">
 <input type=\"hidden\" name=\"action\" value=\"do_save_order\" />
 <input type=\"hidden\" name=\"order\" value=\"article\" />
@@ -1010,6 +1081,7 @@ function wiki_templates($install=false)
 				/* Panel für Artikelauflistung */
                        "panel_category" => "
 <div class=\"wiki_panel\">
+{\$category_add}
 {\$article_add}
 {\$article_edit}
 {\$article_delete}
@@ -1228,6 +1300,10 @@ function wiki_templates($install=false)
 						<td class=\"trow1\"><input type=\"text\" class=\"textbox\" name=\"wiki_name\" /></td>
 					</tr>
 					<tr>
+						<td class=\"trow2\"><strong>{\$lang->wiki_category}:</strong></td>
+						<td class=\"trow2\"><select name=\"wiki_cat\">{\$wiki_cats}</select></td>
+					</tr>
+					<tr>
 						<td class=\"trow2\"></td>
 						<td class=\"trow2\"><input type=\"submit\" value=\"{\$lang->wiki_category_add}\" /></td>
 					</tr>
@@ -1268,6 +1344,10 @@ function wiki_templates($install=false)
 					<tr>
 						<td class=\"trow1\"><strong>{\$lang->wiki_name}:</strong></td>
 						<td class=\"trow1\"><input type=\"text\" class=\"textbox\" name=\"wiki_name\" value=\"{\$wiki['title']}\" /></td>
+					</tr>
+					<tr>
+						<td class=\"trow2\"><strong>{\$lang->wiki_category}:</strong></td>
+						<td class=\"trow2\"><select name=\"wiki_cat\">{\$wiki_cats}</select></td>
 					</tr>
 					<tr>
 						<td class=\"trow2\"></td>
@@ -1404,6 +1484,7 @@ function wiki_templates($install=false)
 <body>
 {\$header}
 {\$errors}
+{\$diffs}
 <table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 	<tr>
 		<td class=\"thead\" colspan=\"6\"><strong>{\$lang->wiki_versions_of} {\$awiki['title']}</strong></td>
@@ -1429,6 +1510,29 @@ function wiki_templates($install=false)
 {\$footer}
 </body>
 </html>",
+				/* Auswahl für Diff */
+						"versions_diff_panel" => "
+<form action=\"wiki.php\" method=\"post\">
+<input type=\"hidden\" name=\"action\" value=\"version_diff\" />
+<input type=\"hidden\" name=\"wid\" value=\"{\$wid}\" />
+<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
+<table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
+	<tr>
+		<td class=\"thead\" colspan=\"4\"><strong>{\$lang->wiki_versions_diff}</strong></td>
+	</tr>
+	<tr>
+		<td class=\"trow1\" width=\"15%\"><strong>{\$lang->wiki_version} 1</strong></td>
+		<td class=\"trow1\" width=\"35%\"><select name=\"version1\">{\$versions1}</select></td>
+		<td class=\"trow1\" width=\"15%\"><strong>{\$lang->wiki_version} 2</strong></td>
+		<td class=\"trow1\" width=\"35%\"><select name=\"version2\">{\$versions2}</select></td>
+	</tr>
+	<tr>
+		<td class=\"trow1\" colspan=\"4\" style=\"text-align: center;\">
+				<input type=\"submit\" class=\"button\" name=\"submit\" value=\"{\$lang->wiki_versions_diff_submit}\" />
+		</td>
+	</tr>
+</table>
+</form><br /><br />",
 						"versions_restore" => "
 		<td class=\"tcat\" width=\"5%\">
 			<span class=\"smalltext\"><strong>{\$lang->wiki_restore}</strong></span>
@@ -1463,6 +1567,39 @@ function wiki_templates($install=false)
 	<td class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=delete_version&vid={\$vid}\">{\$lang->wiki_version_delete}</a></span>
 	</td>",
+				/* Anzeige verschiedener Versionen */
+                       "versions_diff" => "
+<html>
+<head>
+	<title>{\$settings['bbname']} - {\$lang->wiki_versions_diff}</title>
+	{\$headerinclude}
+	<style type=\"text/css\">
+		.wiki-diff-deleted {
+			text-decoration: line-through;
+			background-color: #ffaaaa;
+		}
+		
+		.wiki-diff-inserted {
+			background-color: #aaffaa;
+		}
+	</style>
+</head>
+<body>
+{\$header}
+{\$diffs}
+<table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
+	<tr>
+		<td class=\"thead\" colspan=\"6\"><strong>{\$lang->wiki_versions_diff_between}</strong></td>
+	</tr>
+	<tr>
+		<td class=\"trow1\">
+			{\$diff}
+		</td>
+	</tr>
+</table>
+{\$footer}
+</body>
+</html>",
     				/* Neue und Aktualisierte Artikel */
                        "new" => "
 <html>
