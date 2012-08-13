@@ -113,6 +113,24 @@ $l['search'] = "Search";
 $l['search_full'] = "Fulltext";
 $l['search_title'] = "Title";
 $l['search_no_result'] = "No results found";
+$l['wiki_articles'] = "Article";
+$l['wiki_categories'] = "Categories";
+$l['search_options'] = "Searchoptions";
+$l['search_string'] = "String to search for";
+$l['search_type'] = "Searchtype";
+$l['search_where'] = "What should be searched through?";
+$l['search_cats'] = "Which categegories should be searched through?";
+$l['search_not'] = "No search string was set";
+$l['search_other'] = "Other";
+$l['search_date'] = "Over what period will results appear?";
+$l['search_sort'] = "Sortoptions";
+$l['search_date_all'] = "All";
+$l['search_date_day'] = "Last day";
+$l['search_date_week'] = "Last week";
+$l['search_date_month'] = "Last month";
+$l['search_date_other'] = "Period:";
+$l['search_asc'] = "Ascending (eg A-Z)";
+$l['search_desc'] = "Descending (eg Z-A)";
 
 
 /*Sonstiges */

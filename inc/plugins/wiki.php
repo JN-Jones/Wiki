@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2 Beta 3",
+		"version"		=> "1.2 Beta 4",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -119,7 +119,7 @@ function wiki_install()
 
 	$PL->cache_update("wiki_version", $plugininfo['version']);
 	$PL->cache_update("wiki_pl_version", "8");
-	wiki_cache_update("permissions");
+//	wiki_cache_update("permissions");
 }
 
 function wiki_is_installed()
@@ -442,7 +442,7 @@ function wiki_cache_update($action, $data = false)
 		}
 	}
 	if(!is_array($data))
-		return $PL->cache_update("wiki_".$action, false);
+		return $PL->cache_update("wiki_".$action, array(false));
 
 	return $PL->cache_update("wiki_".$action, $data);
 }
@@ -453,9 +453,9 @@ function wiki_cache_load($action, $id = false)
     $PL or require_once PLUGINLIBRARY;
 
 	$content = $PL->cache_read("wiki_".$action);
-	if(!is_array($content) && $content !== false)
-	    $content = wiki_cache_update($action);
 	if(!is_array($content))
+	    $content = wiki_cache_update($action);
+	if(sizeOf($content) == 1 && $content[0] === false)
 	    return false;
 	if(!$id)
 		return $content;
@@ -491,6 +491,42 @@ function wiki_sort_versions_date($a, $b)
 	return ($e1['date'] < $e2['date']) ? 0 : 2;
 }
 
+function wiki_sort_search_date($a, $b)
+{
+	if($a['type'] == "articles")
+	    $d1 = $a['date'];
+	elseif($a['type'] == "category")
+	    $d1 = 0;
+	elseif($a['type'] == "versions" || $a['type'] == "trash")
+		$d1 = $a['entry']['date'];
+
+	if($b['type'] == "articles")
+	    $d2 = $b['date'];
+	elseif($b['type'] == "category")
+	    $d2 = 0;
+	elseif($b['type'] == "versions" || $b['type'] == "trash")
+		$d2 = $b['entry']['date'];
+
+	if($d1 == $d2)
+	    return 1;
+	return ($d1 > $d2) ? 0 : 2;
+}
+
+function wiki_sort_search_title($a, $b)
+{
+	if($a['type'] == "articles" || $a['type'] == "category")
+	    $t1 = $a['title'];
+	elseif($a['type'] == "versions" || $a['type'] == "trash")
+		$t1 = $a['entry']['title'];
+
+	if($b['type'] == "articles" || $b['type'] == "category")
+	    $t2 = $b['title'];
+	elseif($b['type'] == "versions" || $b['type'] == "trash")
+		$t2 = $b['entry']['title'];
+
+	return strcoll($t1, $t2);
+}
+
 function wiki_create_navy($cat, $article = false, $categories = false)
 {
 	if(!$categories)
@@ -499,7 +535,7 @@ function wiki_create_navy($cat, $article = false, $categories = false)
 	    $cat = $categories[$cat['cid']];
    	if(!is_array($cat))
 	    $cat = $categories[$cat];
-	
+
 	$parent = true;
 	$cats = array();
 	while($parent)
@@ -512,7 +548,7 @@ function wiki_create_navy($cat, $article = false, $categories = false)
 		}
 	}
 	$cats = array_reverse($cats);
-	
+
 	foreach($cats as $cat)
 	{
 		add_breadcrumb($cat['title'], wiki_get_category($cat['id']));
@@ -685,6 +721,8 @@ function createHeader($user, $wiki, $showbuttons=true)
 function wiki_update($installed, $uploaded)
 {
 	global $PL, $db;
+	$up = false;
+
 	$PL->cache_update("wiki_version", $uploaded);
 	$PL->cache_update("wiki_pl_version", "8");
 	if(version_compare($installed, "1.1 Beta 1 Dev 10", "<")) {
@@ -736,6 +774,9 @@ function wiki_update($installed, $uploaded)
 	    $db->add_column('wiki_permissions', 'can_version_diff', "boolean NOT NULL DEFAULT '0' AFTER can_version_delete");
 		$db->update_query("wiki_permissions", array("can_version_diff" => 1), "gid='2' OR gid='3' OR gid='4' OR gid='6'");
 	}
+
+	if($up)
+	    wiki_cache_update("permissions");
 }
 
 function wiki_settings($install=false)
@@ -1025,11 +1066,10 @@ function wiki_templates($install=false)
 					   "search" => "
 <form action=\"wiki.php\" method=\"post\">
 <input type=\"hidden\" name=\"action\" value=\"search\" />
+<input type=\"hidden\" name=\"short\" value=\"true\" />
 <input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
 <input type=\"text\" name=\"searchString\" value=\"{\$searchString}\" class=\"text_input\" />
 <input type=\"submit\" value=\"{\$lang->search}\" />
-<input type=\"radio\" name=\"type\" value=\"full\" {\$full_checked}/>{\$lang->search_full}
-<input type=\"radio\" name=\"type\" value=\"title\" {\$title_checked}/>{\$lang->search_title}
 </form>",
 				/* Anzeige von Suchergebnissen */
                        "search_results" => "
@@ -1047,13 +1087,108 @@ function wiki_templates($install=false)
 	<tr>
 		<td class=\"tcat\" align=\"center\"><strong>{\$lang->wiki_title}</strong></td>
 		<td class=\"tcat\" align=\"center\"><strong>{\$lang->wiki_category}</strong></td>
-		<td class=\"tcat\" align=\"center\"><strong>{\$lang->wiki_short}</strong></td>
+		<td class=\"tcat\" align=\"center\"><strong>{\$lang->search_other}</strong></td>
 	</tr>
 	{\$searchResults}
+</table>
+<br />
+<form action=\"wiki.php\" method=\"post\">
+<input type=\"hidden\" name=\"action\" value=\"search\" />
+<input type=\"hidden\" name=\"my_post_key\" value=\"{\$mybb->post_code}\" />
+<table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 	<tr>
-		<td colspan=\"3\"><center>{\$search}</center></td>
+		<td class=\"thead\" align=\"center\" colspan=\"2\"><strong>{\$lang->search_options}</strong></td>
+	</tr>
+	<tr>
+		<td class=\"tcat\">{\$lang->search_string}</td>
+		<td class=\"tcat\">{\$lang->search_type}</td>
+	</tr>
+	<tr>
+		<td class=\"trow1\"><input type=\"text\" name=\"searchString\" value=\"{\$searchString}\" class=\"text_input\" /></td>
+		<td class=\"trow1\">
+			<input type=\"radio\" name=\"type\" value=\"full\" {\$full_checked}/>{\$lang->search_full}
+			<input type=\"radio\" name=\"type\" value=\"title\" {\$title_checked}/>{\$lang->search_title}
+		</td>
+	</tr>
+	<tr>
+		<td class=\"tcat\">{\$lang->search_where}</td>
+		<td class=\"tcat\">{\$lang->search_cats}</td>
+	</tr>
+	<tr>
+		<td class=\"trow1\">
+			<select name=\"where[]\" multiple=\"multiple\">
+				{\$wopt['articles']}
+				{\$wopt['category']}
+				{\$wopt['versions']}
+				{\$wopt['trash']}
+			</select>
+		</td>
+		<td class=\"trow1\"><select name=\"cats[]\" multiple=\"multiple\">{\$cats}</select></td>
+	</tr>
+	<tr>
+		<td class=\"tcat\">{\$lang->search_date}</td>
+		<td class=\"tcat\">{\$lang->search_sort}</td>
+	</tr>
+	<tr>
+		<td class=\"trow1\">
+			<input type=\"radio\" name=\"date\" value=\"all\" {\$all_checked}/>{\$lang->search_date_all}<br />
+			<input type=\"radio\" name=\"date\" value=\"day\" {\$day_checked}/>{\$lang->search_date_day}<br />
+			<input type=\"radio\" name=\"date\" value=\"week\" {\$week_checked}/>{\$lang->search_date_week}<br />
+			<input type=\"radio\" name=\"date\" value=\"month\" {\$month_checked}/>{\$lang->search_date_month}<br />
+			<input type=\"radio\" name=\"date\" value=\"other\" {\$other_checked}/>{\$lang->search_date_other}<br />
+			<select name=\"day1\">
+				<option value=\"\">&nbsp;</option>
+				{\$days1}
+			</select>.
+			<select name=\"month1\">
+				<option value=\"\">&nbsp;</option>
+				<option value=\"1\" {\$month1['1']}>{\$lang->month_1}</option>
+				<option value=\"2\" {\$month1['2']}>{\$lang->month_2}</option>
+				<option value=\"3\" {\$month1['3']}>{\$lang->month_3}</option>
+				<option value=\"4\" {\$month1['4']}>{\$lang->month_4}</option>
+				<option value=\"5\" {\$month1['5']}>{\$lang->month_5}</option>
+				<option value=\"6\" {\$month1['6']}>{\$lang->month_6}</option>
+				<option value=\"7\" {\$month1['7']}>{\$lang->month_7}</option>
+				<option value=\"8\" {\$month1['8']}>{\$lang->month_8}</option>
+				<option value=\"9\" {\$month1['9']}>{\$lang->month_9}</option>
+				<option value=\"10\" {\$month1['10']}>{\$lang->month_10}</option>
+				<option value=\"11\" {\$month1['11']}>{\$lang->month_11}</option>
+				<option value=\"12\" {\$month1['12']}>{\$lang->month_12}</option>
+			</select>.
+			<input type=\"text\" class=\"textbox\" size=\"4\" maxlength=\"4\" name=\"year1\" value=\"{\$year1}\" />
+			-
+			<select name=\"day2\">
+				<option value=\"\">&nbsp;</option>
+				{\$days2}
+			</select>.
+			<select name=\"month2\">
+				<option value=\"\">&nbsp;</option>
+				<option value=\"1\" {\$month2['1']}>{\$lang->month_1}</option>
+				<option value=\"2\" {\$month2['2']}>{\$lang->month_2}</option>
+				<option value=\"3\" {\$month2['3']}>{\$lang->month_3}</option>
+				<option value=\"4\" {\$month2['4']}>{\$lang->month_4}</option>
+				<option value=\"5\" {\$month2['5']}>{\$lang->month_5}</option>
+				<option value=\"6\" {\$month2['6']}>{\$lang->month_6}</option>
+				<option value=\"7\" {\$month2['7']}>{\$lang->month_7}</option>
+				<option value=\"8\" {\$month2['8']}>{\$lang->month_8}</option>
+				<option value=\"9\" {\$month2['9']}>{\$lang->month_9}</option>
+				<option value=\"10\" {\$month2['10']}>{\$lang->month_10}</option>
+				<option value=\"11\" {\$month2['11']}>{\$lang->month_11}</option>
+				<option value=\"12\" {\$month2['12']}>{\$lang->month_12}</option>
+			</select>.
+			<input type=\"text\" class=\"textbox\" size=\"4\" maxlength=\"4\" name=\"year2\" value=\"{\$year2}\" />
+		</td>
+		<td class=\"trow1\">
+			<input type=\"radio\" name=\"sort\" value=\"date\" {\$date_checked}/>{\$lang->wiki_date}<br />
+			<input type=\"radio\" name=\"sort\" value=\"title\" {\$stitle_checked}/>{\$lang->wiki_title}
+			<br /><br />
+			<input type=\"radio\" name=\"dir\" value=\"asc\" {\$asc_checked}/>{\$lang->search_asc}<br />
+			<input type=\"radio\" name=\"dir\" value=\"desc\" {\$desc_checked}/>{\$lang->search_desc}
+		</td>
 	</tr>
 </table>
+<center><input type=\"submit\" value=\"{\$lang->search}\" /></center>
+</form>
 {\$footer}
 </body>
 </html>",
@@ -1065,9 +1200,9 @@ function wiki_templates($install=false)
 				/* Suchergebnisse */
                        "search_results_table" => "
 	<tr>
-		<td class=\"trow1\">{\$result['title']}</td>
-		<td class=\"trow1\">{\$result['category']}</td>
-		<td class=\"trow1\">{\$result['short']}</td>
+		<td class=\"trow1\">{\$rtitle}</td>
+		<td class=\"trow1\">{\$rcategory}</td>
+		<td class=\"trow1\">{\$rother}</td>
 	</tr>",
 				/* Panel für Hauptseite */
                        "panel" => "
@@ -1578,7 +1713,7 @@ function wiki_templates($install=false)
 			text-decoration: line-through;
 			background-color: #ffaaaa;
 		}
-		
+
 		.wiki-diff-inserted {
 			background-color: #aaffaa;
 		}
