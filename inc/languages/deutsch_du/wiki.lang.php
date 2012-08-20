@@ -133,6 +133,13 @@ $l['search_asc'] = "Aufsteigend (z.B. A-Z)";
 $l['search_desc'] = "Absteigend (z.B. Z-A)";
 
 
+/* Sortieren */
+$l['wiki_sort'] = "Sortieren";
+$l['wiki_sort_normal'] = "Standard";
+$l['wiki_sort_title'] = "Titel";
+$l['wiki_sort_date'] = "Datum";
+
+
 /*Sonstiges */
 $l['wiki_category'] = "Kategorie";
 $l['wiki_number'] = "Anzahl";

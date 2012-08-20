@@ -2,7 +2,25 @@
 $l['wiki'] = "Wiki";
 
 
-/* Menü */
+/* Settings (Just needed in other languages than english) */
+$l['setting_group_wiki'] = "Wiki";
+$l['setting_group_wiki_desc'] = "Einstellungen für das \"Wiki\" Plugin";
+$l['setting_wiki_moderate_new'] = "Moderiere neue Artikel?";
+$l['setting_wiki_moderate_new_desc'] = "";
+$l['setting_wiki_own_sort'] = "Erlaube eigene Sortierung?";
+$l['setting_wiki_own_sort_desc'] = "Ansonsten ist nur die von dir gespeicherte Sortierung möglich";
+$l['setting_wiki_stype'] = "Suchtyp";
+$l['setting_wiki_stype_desc'] = "Welcher Suchtyp soll in deinem Forum Standard sein?";
+$l['setting_wiki_mycode'] = "MyCode";
+$l['setting_wiki_mycode_desc'] = "Welchen MyCode möchtest du in deinem Forum nutzen?";
+$l['setting_wiki_autolink'] = "Artikel automatisch verlinken";
+$l['setting_wiki_autolink_desc'] = "Sollen Artikel in Beiträgen automatisch verlinkt werden? Achtung: Wenn in deinem Forum mehr als ein Artikel mit demselben Namen oder ein Artikel mit einem Namen wie \"und\" existieren kann die Funktion nicht richtig arbeiten und zu Fehlern führen";
+$l['setting_wiki_copy'] = "Zeige Copyright?";
+$l['setting_wiki_copy_desc'] = "Dies ist nicht nötig, es wäre aber nett wenn du es zeigen würdest";
+
+
+
+/* Menu */
 $l['wiki_index'] = "Übersicht";
 $l['wiki_article'] = "Artikel";
 $l['wiki_permissions'] = "Berechtigungen";
@@ -12,7 +30,7 @@ $l['wiki_cache'] = "Cache";
 $l['wiki_update'] = "Update";
 
 
-/* Übersicht/Stats */
+/* Stats */
 $l['wiki_info'] = "Wiki Infos";
 $l['wiki_pl_info'] = "PluginLibrary Infos";
 $l['wiki_stat'] = "Wiki Statistiken";
@@ -30,7 +48,7 @@ $l['wiki_pl_version_error'] = "Die Version deiner PluginLibrary ({1}) ist kleine
 $l['wiki_version_update'] = "Du hast Version \"{1}\"installiert, die neueste Version ist \"{2}\".<br />Bitte führe ein Update durch.";
 
 
-/* Liste */
+/* List */
 $l['wiki_list_art'] = "Artikel";
 $l['wiki_list_cat'] = "Kategorien";
 $l['wiki_list_trash'] = "Mülleimer";

@@ -2,6 +2,24 @@
 $l['wiki'] = "Wiki";
 
 
+/* Settings (Just needed in other languages than english)
+$l['setting_group_wiki'] = "Wiki";
+$l['setting_group_wiki_desc'] = "Settings for the \"Wiki\" Plugin";
+$l['setting_wiki_moderate_new'] = "Moderate new entrys?";
+$l['setting_wiki_moderate_new_desc'] = "";
+$l['setting_wiki_own_sort'] = "Allow own order?";
+$l['setting_wiki_own_sort_desc'] = "Otherwise just the order you saved is available";
+$l['setting_wiki_stype'] = "Search Type";
+$l['setting_wiki_stype_desc'] = "Which search type should be standard in your forum?";
+$l['setting_wiki_mycode'] = "MyCode";
+$l['setting_wiki_mycode_desc'] = "Which MyCode want you use?";
+$l['setting_wiki_autolink'] = "Link Article automatic";
+$l['setting_wiki_autolink_desc'] = "Link automatical Articles in Posts? Attention: If you have more than one article with the same name or an article with a name like \"and\" this function can make mistakes";
+$l['setting_wiki_copy'] = "Show Copyright?";
+$l['setting_wiki_copy_desc'] = "It isn't necessary but it would be nice if you display it";
+*/
+
+
 /* Menü */
 $l['wiki_index'] = "Overview";
 $l['wiki_article'] = "Entries";

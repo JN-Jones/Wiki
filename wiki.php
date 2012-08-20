@@ -2,6 +2,8 @@
 define("IN_MYBB", 1);
 define("THIS_SCRIPT", "wiki.php");
 
+$perpage = 10;
+
 $templatelist = "wiki,wiki_table,wiki_category,wiki_category_table,wiki_text,wiki_header,wiki_header_edit,wiki_header_hidden";
 $templatelist .= ",wiki_panel,wiki_panel_category,wiki_panel_text,wiki_panel_versions,wiki_panel_unlock";
 $templatelist .= ",wiki_add,wiki_edit,wiki_delete,wiki_category_add,wiki_category_edit,wiki_category_delete";
@@ -9,7 +11,8 @@ $templatelist .= ",wiki_trash,wiki_trash_table,wiki_trash_table_element,wiki_ver
 $templatelist .= ",wiki_search,wiki_sort,wiki_control,wiki_table_sort,wiki_table_control,wiki_category_sort,wiki_category_control";
 $templatelist .= ",wiki_category_table_sort,wiki_category_table_control,wiki_trash_table_restore,wiki_trash_table_delete";
 $templatelist .= ",wiki_trash_table_element_restore,wiki_trash_table_element_delete,wiki_versions_restore,wiki_versions_delete";
-$templatelist .= ",wiki_versions_table_restore,wiki_versions_table_delete";
+$templatelist .= ",wiki_versions_table_restore,wiki_versions_table_delete,wiki_search_results,wiki_search_results_no,wiki_results_table";
+$templatelist .= ",wiki_sortoptions,wiki_versions_diff,wiki_versions_diff_panel";
 
 require("global.php");
 $PL or require_once PLUGINLIBRARY;
@@ -289,6 +292,9 @@ if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post")
 	if(!$mybb->input['wiki_name'])
 	    $errors[] = $lang->wiki_no_name;
 
+	if(!$mybb->input['wiki_cat'])
+	    $mybb->input['wiki_cat'] = -1;
+
 	if(!$errors) {
 		$insert_array = array(
 			'title' => $db->escape_string($mybb->input['wiki_name']),
@@ -486,14 +492,27 @@ if($mybb->input['action']=="trash") {
 
 	$trashs = wiki_cache_load("trash");
 	if($trashs) {
+		$num = sizeOf($trashs);
+		$page = intval($mybb->input['page']);
+
+		if($page > 0)
+			$start = ($page-1) *$perpage;
+		else {
+			$start = 0;
+			$page = 1;
+		}
+
+		$multipage = multipage($num, $perpage, $page, WIKI_TRASH);
+
 		uasort($trashs, "wiki_sort_date");
 		$trashs = array_reverse($trashs, true);
+		$trashs = array_slice($trashs, $start, $perpage, true);
 		$category = wiki_cache_load("categories");
 		$wiki_trash = WIKI_TRASH;
 		foreach($trashs as $entry) {
 			$trash=@unserialize($entry['entry']);
 			$trash_cid = intval($trash['cid']);
-			if(array_key_exists($trash_cid, $category))
+			if(is_array($category) && array_key_exists($trash_cid, $category))
 				$trash['category'] = $category[$trash_cid]['title'];
 			else
 				$trash['category'] = $lang->wiki_trash_unknown_cat;
@@ -713,6 +732,16 @@ if($mybb->input['action']=="versions") {
 		$errors = inline_error($errors);
 	$versions = wiki_cache_load("versions");
 	if($versions) {
+		$num = 0;;
+		$page = intval($mybb->input['page']);
+		if($page > 1)
+			$start = ($page-1) *$perpage +1;
+		else {
+			$start = 0;
+			$page = 1;
+		}
+		$end = $start +$perpage;
+
 		$wiki['date']=date($mybb->settings['dateformat'], $awiki['date'])." ".date($mybb->settings['timeformat'], $awiki['date']);
 		$versions1 = "<option value=\"w\">{$wiki['date']}</option>";
 		uasort($versions, "wiki_sort_versions_date");
@@ -720,6 +749,9 @@ if($mybb->input['action']=="versions") {
 		foreach($versions as $wiki) {
 			if($wiki['wid'] != $wid)
 			    continue;
+
+			$num++;
+
 			$vid=$wiki['id'];
 			$wiki=@unserialize($wiki['entry']);
 			$uid=intval($wiki['uid']);
@@ -742,17 +774,23 @@ if($mybb->input['action']=="versions") {
 			$wiki['user'] = build_profile_link($user['username_formatted'], $user['uid']);
 			$wiki_version = wiki_get_version($vid);
 
+			if(wiki_is_allowed("can_version_diff"))
+			    $versions1 .= "<option value=\"$vid\">{$wiki['date']}</option>";
+
+			if($start > $num || $num > $end)
+			    continue;
+
+
 			if(wiki_is_allowed("can_version_restore"))
 				eval("\$restore = \"".$templates->get("wiki_versions_table_restore")."\";");
 			if(wiki_is_allowed("can_version_delete"))
 				eval("\$delete = \"".$templates->get("wiki_versions_table_delete")."\";");
 
 			eval("\$wiki_table .= \"".$templates->get("wiki_versions_table")."\";");
-
-			if(wiki_is_allowed("can_version_diff"))
-			    $versions1 .= "<option value=\"$vid\">{$wiki['date']}</option>";
 		}
 	}
+	$multipage = multipage($num, $perpage, $page, wiki_get_versions($wid));
+
 	if(wiki_is_allowed("can_version_diff")) {
 		$versions2 = $versions1;
 		eval("\$diffs = \"".$templates->get("wiki_versions_diff_panel")."\";");
@@ -790,7 +828,7 @@ if($mybb->input['action']=="new") {
 	if($articles) {
 		uasort($articles, "wiki_sort_date");
 		$articles = array_reverse($articles, true);
-		array_splice($articles, 10);
+		array_splice($articles, $perpage);
 		foreach($articles as $wiki) {
 			$uid = intval($wiki['uid']);
 			$user_query = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
@@ -811,10 +849,10 @@ if($mybb->input['action']=="do_save_order") {
 
     if($mybb->input['order']=="article") {
 	    $table = "wiki";
-	    $cache = "articles";
+	    $c = "articles";
 	} elseif($mybb->input['order']=="category") {
 	    $table = "wiki_cats";
-	    $cache = "categories";
+	    $c = "categories";
 	} else
 		error($lang->wiki_oder_error);
 
@@ -822,7 +860,7 @@ if($mybb->input['action']=="do_save_order") {
 		$ID = $db->escape_string($ID); $Sort = $db->escape_string($Sort);
 		$db->update_query($table, array("Sort"=>$Sort), "id='{$ID}'");
 	}
-	wiki_cache_update($cache);
+	wiki_cache_update($c);
 
 	if($table=="wiki_cats")
 		redirect($wiki_link, $lang->redirect_wiki_order);
@@ -867,7 +905,7 @@ if($mybb->input['action']=="search") {
 	    $full_checked = "";
 	    $title_checked = "checked=\"checked\"";
 	}
-	
+
     $days1 = ''; $days2 = '';
 	for($i = 1; $i <= 31; ++$i) {
 		if($mybb->input['day1'] == $i && $mybb->input['date'] == "other") {
@@ -890,11 +928,11 @@ if($mybb->input['action']=="search") {
 		    $mybb->input['year2'] = $copy_year;
 		$year1 = intval($mybb->input['year1']);
 		$year2 = intval($mybb->input['year2']);
-		
+
 		if($mybb->input['day1'] > 31 || $mybb->input['day1'] < 1 || $mybb->input['day2'] > 31 || $mybb->input['day2'] < 0 ||
 		   	$mybb->input['month1'] > 12 || $mybb->input['month1'] < 1 || $mybb->input['month2'] > 12 || $mybb->input['month2'] < 1)
 		   $mybb->input['date'] = "all";
-		
+
 		$time1 = mktime(0, 0, 0, $mybb->input['month1'], $mybb->input['day1'], $mybb->input['year1']);
 		$time2 = mktime(23, 59, 59, $mybb->input['month2'], $mybb->input['day2'], $mybb->input['year2']);
 
@@ -973,14 +1011,16 @@ if($mybb->input['action']=="search") {
 			$wopt['trash'] = "<option value=\"trash\">{$lang->wiki_trash}</option>";
 	}
 
-	foreach($category as $cat) {
-		if($cat_all)
-		    $mybb->input['cats'][] = $cat['id'];
+	if($category) {
+		foreach($category as $cat) {
+			if($cat_all)
+			    $mybb->input['cats'][] = $cat['id'];
 
-		if(in_array($cat['id'], $mybb->input['cats']))
-		    $cats .= "<option value=\"{$cat['id']}\" selected=\"selected\">{$cat['title']}</option>";
-		else
-		    $cats .= "<option value=\"{$cat['id']}\">{$cat['title']}</option>";
+			if(in_array($cat['id'], $mybb->input['cats']))
+			    $cats .= "<option value=\"{$cat['id']}\" selected=\"selected\">{$cat['title']}</option>";
+			else
+			    $cats .= "<option value=\"{$cat['id']}\">{$cat['title']}</option>";
+		}
 	}
 
 	//Do we have a string to search for?
@@ -1145,6 +1185,30 @@ if($mybb->input['action']=="search") {
 if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 	if(isset($mybb->input['cid']) && $mybb->input['cid']!="") {
 		$cid=intval($mybb->input['cid']);
+		$link = "wiki.php?cid=".$cid;
+		if($mybb->input['cpage']) {
+		    $cadd = "?cpage=".intval($mybb->input['cpage']);
+		    $link .= "&amp;cpage=".intval($mybb->input['cpage']);
+		}
+   		if($mybb->input['page']) {
+		    $aadd = "&amp;page=".intval($mybb->input['page']);
+			$link .= $aadd;
+		}
+		if($mybb->input['sort']) {
+		    $sadd = "&amp;sort={$mybb->input['sort']}";
+			if(!$cadd)
+			    $sortadd = "?sort={$mybb->input['asort']}";
+			else
+				$sortadd = $sadd;
+		}
+		if($mybb->input['asort']) {
+		    $saadd = "&amp;asort={$mybb->input['asort']}";
+			if(!$cadd && !$sadd)
+			    $asortadd = "?asort={$mybb->input['asort']}";
+			else
+				$asortadd = $saadd;
+		}
+
 		$categorys = wiki_cache_load("categories");
 		$category = $categorys[$cid];
 		wiki_create_navy($category, false, $categorys);
@@ -1153,17 +1217,43 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		$articles = wiki_cache_load("articles");
 
 		if($categorys) {
-			uasort($categorys, "wiki_sort_sort");
+			$num = 0;
+			$page = intval($mybb->input['cpage']);
+
+			if($page > 1)
+				$start = ($page-1) *$perpage +1;
+			else {
+				$start = 0;
+				$page = 1;
+			}
+			$end = $start +$perpage;
+
+			switch($mybb->input['sort']) {
+				default:
+				case "normal":
+				case "date":
+					uasort($categorys, "wiki_sort_sort");
+					break;
+				case "title":
+					uasort($categorys, "wiki_sort_title");
+					break;
+			}
 			$wiki_table="";
+			$temp = $cid;
 			foreach($categorys as $t) {
 				if($t['pid'] != $category['id'])
 				    continue;
 
-				$pcid=intval($t['id']);
-				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($pcid).'">'.$t['title'].'</a>';
+				$num++;
+
+				if($start > $num || $num > $end)
+				    continue;
+
+				$cid=intval($t['id']);
+				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 				$category_number = 0;
 				foreach($articles as $article) {
-					if($article['cid'] == $pcid)
+					if($article['cid'] == $cid)
 					    $category_number++;
 				}
 				if(wiki_is_allowed("can_edit_sort")) {
@@ -1176,7 +1266,10 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 				eval("\$wiki_table .= \"".$templates->get("wiki_table_element")."\";");
 			}
+			$cid = $temp;
 			if($wiki_table != "") {
+				$multipage = multipage($num, $perpage, $page, wiki_get_category($cid)."?cpage={page}{$aadd}{$sadd}{$saadd}")."<br />";
+				$sort = getsort($link.$saadd);
 				if(wiki_is_allowed("can_edit_sort")) {
 					$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
 					eval("\$additional['sort'] = \"".$templates->get("wiki_sort")."\";");
@@ -1189,12 +1282,38 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		}
 
 		if($articles) {
-			uasort($articles, "wiki_sort_sort");
+			$num = 0;
+			$page = intval($mybb->input['page']);
+
+			if($page > 1)
+				$start = ($page-1) *$perpage +1;
+			else {
+				$start = 0;
+				$page = 1;
+			}
+			$end = $start +$perpage;
+
+			switch($mybb->input['asort']) {
+				default:
+				case "normal":
+					uasort($articles, "wiki_sort_sort");
+					break;
+				case "title":
+					uasort($articles, "wiki_sort_title");
+					break;
+				case "date":
+					uasort($articles, "wiki_sort_date");
+					break;
+			}
 			$wiki_table="";
 			foreach($articles as $wiki) {
 				if($wiki['cid'] != $cid)
 				    continue;
 				if($wiki['awaiting_moderation'] && !$moderation)
+				    continue;
+
+				$num++;
+				if($start > $num || $num > $end)
 				    continue;
 
 	       		if($wiki['link'])
@@ -1217,6 +1336,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 	       		if(!$wiki['is_hidden'] || wiki_is_allowed("can_view_hidden") || $wiki['uid'] == $mybb->user['uid'])
 					eval("\$wiki_table .= \"".$templates->get("wiki_category_table")."\";");
 			}
+			$amultipage = multipage($num, $perpage, $page, wiki_get_category($cid)."{$cadd}{$sortadd}{$asortadd}");
 		}
 
 		if(wiki_is_allowed("can_create")) {
@@ -1238,6 +1358,10 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 			$submit = "<center><input type=\"submit\" value=\"{$lang->wiki_save_order}\" /></center>";
 			eval("\$additional['sort'] = \"".$templates->get("wiki_category_sort")."\";");
 		}
+
+		if($num > 0)
+			$asort = getsort($link.$sadd, "asort");
+
 		eval("\$showwiki = \"".$templates->get("wiki_category")."\";");
 	}elseif(isset($mybb->input['wid']) && $mybb->input['wid']!="") {
 		require_once MYBB_ROOT."inc/class_parser.php";
@@ -1308,13 +1432,41 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		add_breadcrumb($wiki_title, wiki_get_article($id));
 		eval("\$showwiki = \"".$templates->get("wiki_text")."\";");
 	} else {
+		if($mybb->input['sort'])
+		    $sadd = "?sort={$mybb->input['sort']}";
+
 		$category = wiki_cache_load("categories");
 		$articles = wiki_cache_load("articles");
 		if($category) {
-			uasort($category, "wiki_sort_sort");
+			$num = 0;
+			$page = intval($mybb->input['page']);
+
+			if($page > 1)
+				$start = ($page-1) *$perpage +1;
+			else {
+				$start = 0;
+				$page = 1;
+			}
+			$end = $start +$perpage;
+
+			switch($mybb->input['sort']) {
+				default:
+				case "normal":
+				case "date":
+					uasort($category, "wiki_sort_sort");
+					break;
+				case "title":
+					uasort($category, "wiki_sort_title");
+					break;
+			}
 			$wiki_table="";
 			foreach($category as $t) {
 				if($t['pid'] != -1)
+				    continue;
+
+				$num++;
+
+				if($start > $num || $num > $end)
 				    continue;
 
 				$cid=intval($t['id']);
@@ -1336,6 +1488,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 				eval("\$wiki_table .= \"".$templates->get("wiki_table_element")."\";");
 			}
+			$multipage = multipage($num, $perpage, $page, $wiki_link.$sadd);
 		}
 
 		if(wiki_is_allowed("can_trash_view")) {
@@ -1344,11 +1497,11 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				$category = wiki_cache_load("categories");
 				uasort($trashs, "wiki_sort_date");
 				$trashs = array_reverse($trashs, true);
-				array_splice($trashs, 5);
+				array_splice($trashs, $perpage);
 				foreach($trashs as $entry) {
 					$trash=@unserialize($entry['entry']);
 					$trash_cid = intval($trash['cid']);
-					if(array_key_exists($trash_cid, $category))
+					if(is_array($category) && array_key_exists($trash_cid, $category))
 						$trash['category'] = $category[$trash_cid]['title'];
 					else
 						$trash['category'] = $lang->wiki_trash_unknown_cat;
@@ -1389,6 +1542,13 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 		if(wiki_is_allowed("can_edit"))
 			eval("\$additional['control'] = \"".$templates->get("wiki_control")."\";");
+
+		$link = "wiki.php";
+		if($mybb->input['page'])
+		    $link .= "?page=".intval($mybb->input['page']);
+
+		if($num > 0)
+			$sort = getsort($link);
 
 		eval("\$wiki_category = \"".$templates->get("wiki_table")."\";");
 		eval("\$showwiki = \"".$templates->get("wiki")."\";");

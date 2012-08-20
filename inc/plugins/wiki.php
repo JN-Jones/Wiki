@@ -20,10 +20,10 @@ function wiki_info()
 	return array(
 		"name"			=> "Wiki",
 		"description"	=> "Adds a wiki to the Forum",
-		"website"		=> "http://www.mybbdemo.tk/forum-12.html",
+		"website"		=> "http://www.mybbdemo.tk/",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2 Beta 4",
+		"version"		=> "1.2 Beta 5",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -366,9 +366,8 @@ function wiki_init()
 	$wiki_link = WIKI;
 
 
-	$groups = explode(",", $mybb->user['additionalgroups']);
-	if($mybb->user['additionalgroups'] == "")
-	    $groups = array();
+	if($mybb->user['additionalgroups'] != "")
+		$groups = explode(",", $mybb->user['additionalgroups']);
 	$groups[] = $mybb->user['usergroup'];
 
 	$perms = wiki_cache_load("permissions");
@@ -581,6 +580,21 @@ function diff($old, $new){
 }
 
 
+function getsort($url, $name="sort")
+{
+	global $mybb, $lang, $templates, $theme;
+
+	if(!$mybb->settings['wiki_own_sort'])
+	    return;
+
+	if(!$mybb->input[$name])
+		$mybb->input[$name] = "normal";
+
+	$selected[$mybb->input[$name]] = " selected=selected";
+
+	eval("\$sort = \"".$templates->get("wiki_sortoptions")."\";");
+	return $sort;
+}
 
 function createHeader($user, $wiki, $showbuttons=true)
 {
@@ -792,6 +806,12 @@ function wiki_settings($install=false)
 		        "optionscode" => "yesno",
 		        "value" => "no",
 	          ),
+	      	"own_sort" => array(
+	          	"title" => "Allow own order?",
+	          	"description" => "Otherwise just the order you saved is available",
+		        "optionscode" => "yesno",
+		        "value" => "yes",
+	          ),
 	      	"stype" => array(
 	          	"title" => "Search Type",
 	          	"description" => "Which search type should be standard in your forum?",
@@ -812,7 +832,7 @@ both=Both",
 	          ),
 	      	"autolink" => array(
 	          	"title" => "Link Article automatic",
-	          	"description" => "Link automatical Articles in Posts? Attention: This is just a BETA Function",
+	          	"description" => "Link automatical Articles in Posts? Attention: If you have more than one article with the same name or an article with a name like \"and\" this function can make mistakes",
 		        "optionscode" => "yesno",
 		        "value" => "no",
 	          ),
@@ -867,6 +887,7 @@ function wiki_templates($install=false)
 		</td>",
 				/* Kategorie Tabelle */
 						"table" => "
+<div style=\"float: right;\">{\$multipage}</div>
 <form action=\"wiki.php\" method=\"post\">
 <input type=\"hidden\" name=\"action\" value=\"do_save_order\" />
 <input type=\"hidden\" name=\"order\" value=\"category\" />
@@ -888,8 +909,12 @@ function wiki_templates($install=false)
 	</tr>
 	{\$wiki_table}
 </table>
+<br />
+<div style=\"float: right;\">{\$multipage}</div>
 {\$submit}
-</form>",
+</form>
+<div style=\"float: left; margin-top: -20px;\">{\$sort}</div>
+<br />",
 				/* Elemente für Kategorie Hauptseite */
                        "table_element" => "
 <tr>
@@ -934,6 +959,7 @@ function wiki_templates($install=false)
 {\$header}
 {\$wiki_header}
 {\$wiki_category}
+<div style=\"float: right;\">{\$amultipage}</div>
 <form action=\"wiki.php\" method=\"post\">
 <input type=\"hidden\" name=\"action\" value=\"do_save_order\" />
 <input type=\"hidden\" name=\"order\" value=\"article\" />
@@ -956,8 +982,11 @@ function wiki_templates($install=false)
 	</tr>
 	{\$wiki_table}
 </table>
+<br />
+<div style=\"float: right;\">{\$amultipage}</div>
 {\$submit}
 </form>
+<div style=\"float: left; margin-top: -20px;\">{\$asort}</div>
 {\$footer}
 </body>
 </html>",
@@ -994,6 +1023,16 @@ function wiki_templates($install=false)
 	<td style=\"background: {\$background};\" class=\"trow1\">
 		<span class=\"smalltext\"><a href=\"{\$mybb->settings['bburl']}/wiki.php?action=article_delete&wid={\$wiki['id']}\"><img src=\"{\$settings['bburl']}/images/wiki_delete.gif\" alt=\"{\$lang->wiki_delete}\" title=\"{\$lang->wiki_delete}\" /></a></span>
 	</td>",
+				/* Sortierungsoptionen */
+						"sortoptions" => "
+<form action=\"{\$url}\" method=\"post\">
+<select name=\"{\$name}\">
+	<option value=\"normal\"{\$selected['normal']}>{\$lang->wiki_sort_normal}</option>
+	<option value=\"title\"{\$selected['title']}>{\$lang->wiki_sort_title}</option>
+	<option value=\"date\"{\$selected['date']}>{\$lang->wiki_sort_date}</option>
+</select>
+<input type=\"submit\" value=\"{\$lang->wiki_sort}\" />
+</form>",
 				/* Anzeige eines Artikels */
                        "text" => "
 <html>
@@ -1546,13 +1585,14 @@ function wiki_templates($install=false)
 <body>
 {\$header}
 {\$errors}
+<div style=\"float: right;\">{\$multipage}</div>
 {\$wiki_trash_table}
+<div style=\"float: right;\">{\$multipage}</div>
 {\$footer}
 </body>
 </html>",
 				/* Mülleimer - Tabelle */
                        "trash_table" => "
-<br />
 <table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 	<tr>
 		<td class=\"thead\" colspan=\"6\"><strong><a href=\"{\$settings['bburl']}/{\$wiki_trash}\" title=\"{\$lang->wiki_trash}\">{\$lang->wiki_trash}</a></strong></td>
@@ -1620,6 +1660,7 @@ function wiki_templates($install=false)
 {\$header}
 {\$errors}
 {\$diffs}
+<div style=\"float: right;\">{\$multipage}</div>
 <table border=\"0\" cellspacing=\"{\$theme['borderwidth']}\" cellpadding=\"{\$theme['tablespace']}\" class=\"tborder\">
 	<tr>
 		<td class=\"thead\" colspan=\"6\"><strong>{\$lang->wiki_versions_of} {\$awiki['title']}</strong></td>
@@ -1642,6 +1683,7 @@ function wiki_templates($install=false)
 	</tr>
 	{\$wiki_table}
 </table>
+<div style=\"float: right;\">{\$multipage}</div>
 {\$footer}
 </body>
 </html>",
