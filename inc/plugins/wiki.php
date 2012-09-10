@@ -23,7 +23,7 @@ function wiki_info()
 		"website"		=> "http://www.mybbdemo.tk/",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2 Beta 5",
+		"version"		=> "1.2",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -440,10 +440,13 @@ function wiki_cache_update($action, $data = false)
 			    $data[$rdata['id']] = $rdata;
 		}
 	}
-	if(!is_array($data))
-		return $PL->cache_update("wiki_".$action, array(false));
+	if(!is_array($data)) {
+		$PL->cache_update("wiki_".$action, array(false));
+		return false;
+	}
 
-	return $PL->cache_update("wiki_".$action, $data);
+	$PL->cache_update("wiki_".$action, $data);
+	return true;
 }
 
 function wiki_cache_load($action, $id = false)
@@ -452,9 +455,11 @@ function wiki_cache_load($action, $id = false)
     $PL or require_once PLUGINLIBRARY;
 
 	$content = $PL->cache_read("wiki_".$action);
-	if(!is_array($content))
-	    $content = wiki_cache_update($action);
-	if(sizeOf($content) == 1 && $content[0] === false)
+	if(!is_array($content)) {
+	    wiki_cache_update($action);
+		$content = $PL->cache_read("wiki_".$action);
+	}
+   	if(sizeOf($content) == 1 && $content[0] === false)
 	    return false;
 	if(!$id)
 		return $content;

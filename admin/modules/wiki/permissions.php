@@ -74,10 +74,10 @@ foreach($groupscache as $group)
 	$row = $permissions[$group['gid']];
 	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_view'            , $row['can_view']            ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_create' 		 , $row['can_create']    	   ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_edit'            , $row['can_edit']            ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_search'		     , $row['can_search']          ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_view'    	, $row['can_view']      ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_create'  	, $row['can_create']    ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_edit'  	, $row['can_edit']      ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_search'   , $row['can_search']    ), array('style' => 'text-align: center;'));
 
 	$table->construct_row();
 	
@@ -101,10 +101,10 @@ foreach($groupscache as $group)
 	$row = $permissions[$group['gid']];
 	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_view'   , $row['can_version_view']   ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_restore', $row['can_version_restore']), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_delete' , $row['can_version_delete'] ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_version_diff' 	, $row['can_version_diff'] 	 ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_version_view'   	, $row['can_version_view']   ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_version_restore'	, $row['can_version_restore']), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_version_delete' 	, $row['can_version_delete'] ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_version_diff'		, $row['can_version_diff'] 	 ), array('style' => 'text-align: center;'));
 
 	$table->construct_row();
 }
@@ -125,9 +125,9 @@ foreach($groupscache as $group)
 	$row = $permissions[$group['gid']];
 	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_trash_view'      , $row['can_trash_view']      ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_trash_restore'   , $row['can_trash_restore']   ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_trash_delete'    , $row['can_trash_delete']    ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_trash_view'      , $row['can_trash_view']      ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_trash_restore'   , $row['can_trash_restore']   ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_trash_delete'    , $row['can_trash_delete']    ), array('style' => 'text-align: center;'));
 
 	$table->construct_row();
 }
@@ -149,10 +149,10 @@ foreach($groupscache as $group)
 	$row = $permissions[$group['gid']];
 	$table->construct_cell(htmlspecialchars_uni($group['title']));
 
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_edit_closed'     , $row['can_edit_closed']     ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_view_hidden'     , $row['can_view_hidden']     ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_edit_sort'	     , $row['can_edit_sort']       ), array('style' => 'text-align: center;'));
-	$table->construct_cell(wiki_build_permission_checkbox($row['gid'], 'can_unlock'	     	 , $row['can_unlock']    	   ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_edit_closed'     	, $row['can_edit_closed']     ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_view_hidden'     	, $row['can_view_hidden']     ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_edit_sort'	   	, $row['can_edit_sort']       ), array('style' => 'text-align: center;'));
+	$table->construct_cell(wiki_build_permission_checkbox($group['gid'], 'can_unlock'	      	, $row['can_unlock']    	  ), array('style' => 'text-align: center;'));
 
 	$table->construct_row();
 }
