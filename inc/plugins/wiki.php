@@ -7,6 +7,8 @@ if(!defined("PLUGINLIBRARY"))
 {
     define("PLUGINLIBRARY", MYBB_ROOT."inc/plugins/pluginlibrary.php");
 }
+if(!$pluginlist)
+    $pluginlist = $cache->read("plugins");
 
 $plugins->add_hook("global_start", "wiki_init");
 $plugins->add_hook("fetch_wol_activity_end", "wiki_wol_activity");
@@ -14,16 +16,20 @@ $plugins->add_hook("build_friendly_wol_location_end", "wiki_wol_location");
 $plugins->add_hook("parse_message", "wiki_mycode");
 $plugins->add_hook("parse_message_quote", "wiki_mycode");
 $plugins->add_hook("parse_message_end", "wiki_autolink");
+if(in_array("myplugins", $pluginlist['active'])) {
+	$plugins->add_hook("myplugins_actions", "wiki_myplugins_actions");
+	$plugins->add_hook("myplugins_permission", "wiki_myplugins_admin_permissions");
+}
 
 function wiki_info()
 {
 	return array(
 		"name"			=> "Wiki",
 		"description"	=> "Adds a wiki to the Forum",
-		"website"		=> "http://www.mybbdemo.tk/",
+		"website"		=> "http://jonesboard.tk/",
 		"author"		=> "Jones",
-		"authorsite"	=> "http://www.mybbdemo.tk/",
-		"version"		=> "1.2",
+		"authorsite"	=> "http://jonesboard.tk/",
+		"version"		=> "1.2.1",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -163,6 +169,60 @@ function wiki_deactivate()
 	require MYBB_ROOT."inc/adminfunctions_templates.php";
 	find_replace_templatesets("header", "#".preg_quote('<li><a href="{$mybb->settings[\'bburl\']}/{$wiki_link}"><img src="{$theme[\'imgdir\']}/toplinks/wiki.gif" alt="" title="" />{$lang->wiki}</a></li>')."#i", "", 0);
 	find_replace_templatesets("footer", "#".preg_quote('{$wiki_copyright}')."#i", "", 0);
+}
+
+function wiki_myplugins_actions($actions)
+{
+	global $page, $lang, $info, $db;
+	$lang->load("wiki");
+
+	$own_actions = array(
+		'wiki-index' => array('active' => 'wiki-index', 'file' => '../wiki/home.php'),
+		'wiki-article' => array('active' => 'wiki-article', 'file' => '../wiki/article.php'),
+		'wiki-permissions' => array('active' => 'wiki-permissions', 'file' => '../wiki/permissions.php'),
+		'wiki-import' => array('active' => 'wiki-import', 'file' => '../wiki/import.php'),
+		'wiki-cache' => array('active' => 'wiki-cache', 'file' => '../wiki/cache.php'),
+		'wiki-update' => array('active' => 'wiki-update', 'file' => '../wiki/update.php')
+	);
+	$actions = array_merge($actions, $own_actions);
+
+	$query = $db->simple_select("settinggroups", "gid", "name='Wiki'");
+    $g = $db->fetch_array($query);
+
+	$sub_menu = array();
+	$sub_menu['5'] = array("id" => "wiki-index", "title" => $lang->wiki_index, "link" => "index.php?module=myplugins-wiki-index");
+	$sub_menu['10'] = array("id" => "wiki-article", "title" => $lang->wiki_article, "link" => "index.php?module=myplugins-wiki-article");
+	$sub_menu['15'] = array("id" => "wiki-permissions", "title" => $lang->wiki_permissions, "link" => "index.php?module=myplugins-wiki-permissions");
+	$sub_menu['20'] = array("id" => "wiki-option", "title" => $lang->wiki_option, "link" => "index.php?module=config-settings&action=change&gid=".$g['gid']);
+	$sub_menu['25'] = array("id" => "wiki-import", "title" => $lang->wiki_import, "link" => "index.php?module=myplugins-wiki-import");
+	$sub_menu['30'] = array("id" => "wiki-cache", "title" => $lang->wiki_cache, "link" => "index.php?module=myplugins-wiki-cache");
+	$sub_menu['35'] = array("id" => "wiki-update", "title" => $lang->wiki_update, "link" => "index.php?module=myplugins-wiki-update");
+
+	$sidebar = new SidebarItem($lang->wiki);
+	$sidebar->add_menu_items($sub_menu, $actions[$info]['active']);
+
+	$page->sidebar .= $sidebar->get_markup();
+
+	return $actions;
+}
+
+function wiki_myplugins_admin_permissions($admin_permissions)
+{
+	global $lang;
+
+	$lang->load("wiki");
+
+	$own_admin_permissions = array(
+		"index"	=> $lang->wiki_permission_index,
+		"article"	=> $lang->wiki_permission_article,
+		"permissions"	=> $lang->wiki_permission_permissions,
+		"import"	=> $lang->wiki_permission_import,
+		"cache"	=> $lang->wiki_permission_cache,
+		"update"	=> $lang->wiki_permission_update
+	);
+	$admin_permissions = array_merge($admin_permissions, $own_admin_permissions);
+
+	return $admin_permissions;
 }
 
 function wiki_wol_activity($user_activity)

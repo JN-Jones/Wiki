@@ -10,7 +10,12 @@ if(!defined("PLUGINLIBRARY"))
 }
 $PL or require_once PLUGINLIBRARY;
 
-$page->add_breadcrumb_item($lang->wiki, "index.php?module=wiki");
+if(function_exists("myplugins_info"))
+    define(MODULE, "myplugins-wiki");
+else
+    define(MODULE, "wiki");
+
+$page->add_breadcrumb_item($lang->wiki, "index.php?module=".MODULE."-index");
 
 $page->output_header($lang->wiki);
 

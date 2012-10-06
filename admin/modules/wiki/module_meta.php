@@ -22,8 +22,9 @@ function wiki_meta()
 	$sub_menu['30'] = array("id" => "cache", "title" => $lang->wiki_cache, "link" => "index.php?module=wiki-cache");
 	$sub_menu['35'] = array("id" => "update", "title" => $lang->wiki_update, "link" => "index.php?module=wiki-update");
 	
-	$query = $db->simple_select("settinggroups", "gid", "name='Wiki'");
-	if($db->num_rows($query))
+//	$query = $db->simple_select("settinggroups", "gid", "name='Wiki'");
+//	if($db->num_rows($query))
+	if(function_exists("wiki_info") && !function_exists("myplugins_info"))
 		$page->add_menu_item($lang->wiki, "wiki", "index.php?module=wiki", 70, $sub_menu);
 
 	return true;

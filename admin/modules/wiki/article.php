@@ -10,6 +10,11 @@ if(!defined("PLUGINLIBRARY"))
 }
 $PL or require_once PLUGINLIBRARY;
 
+if(function_exists("myplugins_info"))
+    define(MODULE, "myplugins-wiki");
+else
+    define(MODULE, "wiki");
+
 if($mybb->input['action']=="export") {
 	if($mybb->input['cat']) {
 		$cat = wiki_cache_load("categories", $mybb->input['cat']);
@@ -55,13 +60,13 @@ if($mybb->input['action']=="export") {
 	}
 	if(!$data) {
 		flash_message($lang->wiki_export_no_data, 'error');
-		admin_redirect("index.php?module=wiki-article");
+		admin_redirect("index.php?module=".MODULE."-article");
 	}
 	$PL->xml_export($data, $filename.".xml", $comment);
 }
 
-$page->add_breadcrumb_item($lang->wiki, "index.php?module=wiki");
-$page->add_breadcrumb_item($lang->wiki_article, "index.php?module=wiki-article");
+$page->add_breadcrumb_item($lang->wiki, "index.php?module=".MODULE."-index");
+$page->add_breadcrumb_item($lang->wiki_article, "index.php?module=".MODULE."-article");
 
 $page->output_header($lang->wiki_article);
 
@@ -85,9 +90,9 @@ if($mybb->input['action']=="cat") {
 				}
 			}
 
-			$table->construct_cell("<a href=\"index.php?module=wiki-article&cat={$t['id']}\">{$t['title']}</a>", array('width' => '50%'));
+			$table->construct_cell("<a href=\"index.php?module=".MODULE."-article&cat={$t['id']}\">{$t['title']}</a>", array('width' => '50%'));
 			$table->construct_cell($t['number'], array('width' => '25%'));
-			$table->construct_cell("<a href=\"index.php?module=wiki-article&action=export&cat={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '25%'));
+			$table->construct_cell("<a href=\"index.php?module=".MODULE."-article&action=export&cat={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '25%'));
 			$table->construct_row();
 		}
 	} else {
@@ -201,7 +206,7 @@ if($mybb->input['action']=="cat") {
 			$table->construct_cell($t['short'], array('width' => '40%'));
 			$table->construct_cell($profilelink, array('width' => '10%'));
 			$table->construct_cell($date, array('width' => '10%'));
-			$table->construct_cell("<a href=\"index.php?module=wiki-article&action=export&art={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '10%'));
+			$table->construct_cell("<a href=\"index.php?module=".MODULE."-article&action=export&art={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '10%'));
 			$table->construct_row();
 		}
 	} else {
@@ -219,22 +224,22 @@ function generate_tabs($selected)
 	$sub_tabs = array();
 	$sub_tabs['art'] = array(
 		'title' => $lang->wiki_list_art,
-		'link' => "index.php?module=wiki-article",
+		'link' => "index.php?module=".MODULE."-article",
 		'description' => $lang->wiki_list_art_desc
 	);
 	$sub_tabs['cat'] = array(
 		'title' => $lang->wiki_list_cat,
-		'link' => "index.php?module=wiki-article&amp;action=cat",
+		'link' => "index.php?module=".MODULE."-article&amp;action=cat",
 		'description' => $lang->wiki_list_cat_desc
 	);
 	$sub_tabs['trash'] = array(
 		'title' => $lang->wiki_list_trash,
-		'link' => "index.php?module=wiki-article&amp;action=trash",
+		'link' => "index.php?module=".MODULE."-article&amp;action=trash",
 		'description' => $lang->wiki_list_trash_desc
 	);
 	$sub_tabs['export'] = array(
 		'title' => $lang->wiki_list_export,
-		'link' => "index.php?module=wiki-article&amp;action=export",
+		'link' => "index.php?module=".MODULE."-article&amp;action=export",
 		'description' => $lang->wiki_list_export_desc
 	);
 

@@ -1,6 +1,6 @@
 <?php
 $l['wiki'] = "Wiki";
-$l['wiki_deactivated'] = "The Wiki is deactivated at the moment and therefore not available";
+$l['wiki_deactivated'] = "The Wiki is currently disabled and therefore is not available";
 
 
 /* Nav */
@@ -28,38 +28,38 @@ $l['wiki_no_cat'] = "Please enter a category!";
 $l['wiki_no_title'] = "Please enter a title!";
 $l['wiki_no_text'] = "Please enter a link or a text!";
 $l['wiki_no_short'] = "Please enter a short description!";
-$l['wiki_error_invalid_wiki'] = "The Wiki entry does not exists";
-$l['wiki_error_invalid_category'] = "The Wiki category does not exists";
+$l['wiki_error_invalid_wiki'] = "The Wiki entry does not exist";
+$l['wiki_error_invalid_category'] = "The Wiki category does not exist";
 $l['wiki_invalid_id'] = "This entry does not exist (Error: #01)";
 
 
 /* Logs */
-$l['wiki_log_category_add'] = "Added Wiki category";
-$l['wiki_log_category_edit'] = "Edited Wiki category";
-$l['wiki_log_category_delete'] = "Deleted Wiki category";
-$l['wiki_log_add'] = "Added Wiki entry";
-$l['wiki_log_edit'] = "Edited Wiki entry";
-$l['wiki_log_delete'] = "Deleted Wiki entry";
-$l['wiki_log_restored'] = "Restored Wiki entry";
-$l['wiki_log_restored_version'] = "Reseted Wiki entry";
-$l['wiki_log_trash_delete'] = "Wiki entry definitive deleted";
-$l['wiki_log_version_delete'] = "Wiki entry version definitive deleted";
-$l['wiki_log_unlock'] = "Unlocked Wiki entry";
+$l['wiki_log_category_add'] = "Wiki category added";
+$l['wiki_log_category_edit'] = "Wiki category edited";
+$l['wiki_log_category_delete'] = "Wiki category deleted";
+$l['wiki_log_add'] = "Wiki entry added";
+$l['wiki_log_edit'] = "Wiki entry edited";
+$l['wiki_log_delete'] = "Wiki entry deleted";
+$l['wiki_log_restored'] = "Wiki entry restored";
+$l['wiki_log_restored_version'] = "Wiki entry reset";
+$l['wiki_log_trash_delete'] = "Wiki entry definitively deleted";
+$l['wiki_log_version_delete'] = "Wiki entry version definitively deleted";
+$l['wiki_log_unlock'] = "Wiki entry unlocked";
 
 
 /* Redirects */
-$l['redirect_wiki_category_add'] = "Added Wiki category successfully.";
-$l['redirect_wiki_category_edit'] = "Edited Wiki category successfully.";
-$l['redirect_wiki_category_delete'] = "Deleted Wiki category successfully.";
-$l['redirect_wiki_add'] = "Added Wiki entry successfully.";
-$l['redirect_wiki_add_moderate'] = "Added Wiki entry successfully. Please wait till a Moderator unlocks it.";
-$l['redirect_wiki_edit'] = "Edited Wiki entry successfully.";
-$l['redirect_wiki_delete'] = "Deleted Wiki entry successfully.";
-$l['redirect_wiki_restore'] = "Restored Wiki entry successfully";
-$l['redirect_wiki_restore_version'] = "Reseted Wiki entry successfully";
-$l['redirect_wiki_trash_delete'] = "Wiki entry definitive deleted";
-$l['redirect_wiki_version_delete'] = "Wiki enty version definitive deleted";
-$l['redirect_wiki_unlock'] = "Unlocked Wiki entry successfully";
+$l['redirect_wiki_category_add'] = "Wiki category successfully added.";
+$l['redirect_wiki_category_edit'] = "Wiki category successfully edited.";
+$l['redirect_wiki_category_delete'] = "Wiki category successfully deleted.";
+$l['redirect_wiki_add'] = "Wiki entry successfully added.";
+$l['redirect_wiki_add_moderate'] = "Wiki entry successfully added. Please wait till a Moderator unlocks it.";
+$l['redirect_wiki_edit'] = "Wiki entry successfully edited.";
+$l['redirect_wiki_delete'] = "Wiki entry successfully deleted.";
+$l['redirect_wiki_restore'] = "Wiki entry successfully restored.";
+$l['redirect_wiki_restore_version'] = "Wiki entry successfully reset.";
+$l['redirect_wiki_trash_delete'] = "Wiki entry definitively deleted.";
+$l['redirect_wiki_version_delete'] = "Wiki enty version definitively deleted.";
+$l['redirect_wiki_unlock'] = "Wiki entry successfully unlocked";
 $l['redirect_wiki_order'] = "New order saved";
 
 
@@ -80,7 +80,7 @@ $l['wiki_wol_search'] = "Is <a href=\"wiki.php?action=search\">searching</a> in 
 $l['wiki_trash'] = "Trash";
 $l['wiki_trash_deletedon'] = "Deleted on";
 $l['wiki_trash_deletedfrom'] = "Deleted from";
-$l['wiki_trash_delete'] = "Definitive delete";
+$l['wiki_trash_delete'] = "Definitively delete";
 $l['wiki_trash_unknown_cat'] = "*Unknown*";
 
 
@@ -88,11 +88,11 @@ $l['wiki_trash_unknown_cat'] = "*Unknown*";
 $l['wiki_version'] = "Version";
 $l['wiki_versions'] = "Versions";
 $l['wiki_versions_of'] = "Versions of";
-$l['wiki_versions_diff'] = "Show difference between which versions?";
+$l['wiki_versions_diff'] = "Show differences between which versions?";
 $l['wiki_versions_diff_submit'] = "Show";
-$l['wiki_versions_diff_same'] = "You can't view the difference between the same version";
-$l['wiki_versions_diff_between'] = "Difference between the version from {1} and {2}";
-$l['wiki_version_delete'] = "Version definitive delete";
+$l['wiki_versions_diff_same'] = "Same versions are by definition identical...";
+$l['wiki_versions_diff_between'] = "Differences between the versions {1} and {2}";
+$l['wiki_version_delete'] = "Version definitively delete";
 
 
 /* Moderierung */
@@ -105,7 +105,7 @@ $l['wiki_new_article'] = "New entries";
 
 /* Sortierung */
 $l['wiki_save_order'] = "Save order";
-$l['wiki_oder_error'] = "Error in formular";
+$l['wiki_oder_error'] = "Error in formula";
 
 
 /* Suche */
@@ -113,17 +113,17 @@ $l['search'] = "Search";
 $l['search_full'] = "Fulltext";
 $l['search_title'] = "Title";
 $l['search_no_result'] = "No results found";
-$l['wiki_articles'] = "Article";
+$l['wiki_articles'] = "Articles";
 $l['wiki_categories'] = "Categories";
-$l['search_options'] = "Searchoptions";
+$l['search_options'] = "Search options";
 $l['search_string'] = "String to search for";
-$l['search_type'] = "Searchtype";
+$l['search_type'] = "Search type";
 $l['search_where'] = "What should be searched through?";
-$l['search_cats'] = "Which categegories should be searched through?";
+$l['search_cats'] = "Which categories should be searched through?";
 $l['search_not'] = "No search string was set";
 $l['search_other'] = "Other";
 $l['search_date'] = "Over what period will results appear?";
-$l['search_sort'] = "Sortoptions";
+$l['search_sort'] = "Sort options";
 $l['search_date_all'] = "All";
 $l['search_date_day'] = "Last day";
 $l['search_date_week'] = "Last week";
@@ -158,9 +158,9 @@ $l['wiki_date'] = "Date";
 $l['wiki_user'] = "User";
 $l['wiki_written'] = "Written on {1} at {2}";
 $l['wiki_control'] = "Edit/Delete";
-$l['wiki_hidden'] = "This Entry isn\'t visible.";
+$l['wiki_hidden'] = "This Entry is not visible.";
 $l['wiki_closed'] = "This Entry is closed.";
-$l['confirm_delete_wiki'] = "Are you sure to delete this entrie?";
-$l['confirm_delete_category'] = "Are you sure to delete this category?";
+$l['confirm_delete_wiki'] = "Are you sure you wish to delete this entry?";
+$l['confirm_delete_category'] = "Are you sure you wish to delete this category?";
 $l['wiki_copy'] = "Wiki by";
 ?>

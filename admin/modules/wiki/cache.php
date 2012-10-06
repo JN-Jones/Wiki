@@ -9,8 +9,14 @@ if(!defined("PLUGINLIBRARY"))
     define("PLUGINLIBRARY", MYBB_ROOT."inc/plugins/pluginlibrary.php");
 }
 $PL or require_once PLUGINLIBRARY;
-$page->add_breadcrumb_item($lang->wiki, "index.php?module=wiki");
-$page->add_breadcrumb_item($lang->wiki_cache, "index.php?module=wiki-cache");
+
+if(function_exists("myplugins_info"))
+    define(MODULE, "myplugins-wiki");
+else
+    define(MODULE, "wiki");
+
+$page->add_breadcrumb_item($lang->wiki, "index.php?module=".MODULE."-index");
+$page->add_breadcrumb_item($lang->wiki_cache, "index.php?module=".MODULE."-cache");
 
 $page->output_header($lang->wiki_cache);
 
@@ -30,7 +36,7 @@ if($mybb->input['action'] == "view") {
 	if(!$wcache) {
 		$lang->wiki_cache_empty = $lang->sprintf($lang->wiki_cache_empty, $mybb->input['cache']);
 		flash_message($lang->wiki_cache_empty, 'error');
-		admin_redirect("index.php?module=wiki-cache");
+		admin_redirect("index.php?module=".MODULE."-cache");
 	}
 	$cachecontents = print_r($wcache, true);
 	$table = new Table;
@@ -44,7 +50,7 @@ if($mybb->input['action'] == "view") {
 
 	$lang->wiki_cache_reload = $lang->sprintf($lang->wiki_cache_reload, $mybb->input['cache']);
 	flash_message($lang->wiki_cache_reload, 'success');
-	admin_redirect("index.php?module=wiki-cache");
+	admin_redirect("index.php?module=".MODULE."-cache");
 } else {
 	$wcache['articles'] = wiki_cache_load("articles");
 	$wcache['categories'] = wiki_cache_load("categories");
@@ -64,29 +70,29 @@ if($mybb->input['action'] == "view") {
 	$table->construct_header($lang->wiki_elements);
 	$table->construct_header($lang->wiki_reload);
 
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=view&amp;cache=articles\">{$lang->wiki_articles}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=view&amp;cache=articles\">{$lang->wiki_articles}</a>");
 	$table->construct_cell($number['articles']);
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=reload&amp;cache=articles\">{$lang->wiki_reload}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=reload&amp;cache=articles\">{$lang->wiki_reload}</a>");
 	$table->construct_row();
 
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=view&amp;cache=categories\">{$lang->wiki_categories}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=view&amp;cache=categories\">{$lang->wiki_categories}</a>");
 	$table->construct_cell($number['categories']);
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=reload&amp;cache=categories\">{$lang->wiki_reload}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=reload&amp;cache=categories\">{$lang->wiki_reload}</a>");
 	$table->construct_row();
 
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=view&amp;cache=versions\">{$lang->wiki_versions}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=view&amp;cache=versions\">{$lang->wiki_versions}</a>");
 	$table->construct_cell($number['versions']);
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=reload&amp;cache=versions\">{$lang->wiki_reload}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=reload&amp;cache=versions\">{$lang->wiki_reload}</a>");
 	$table->construct_row();
 
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=view&amp;cache=trash\">{$lang->wiki_trash}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=view&amp;cache=trash\">{$lang->wiki_trash}</a>");
 	$table->construct_cell($number['trash']);
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=reload&amp;cache=trash\">{$lang->wiki_reload}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=reload&amp;cache=trash\">{$lang->wiki_reload}</a>");
 	$table->construct_row();
 
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=view&amp;cache=permissions\">{$lang->wiki_permissions}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=view&amp;cache=permissions\">{$lang->wiki_permissions}</a>");
 	$table->construct_cell($number['permissions']);
-	$table->construct_cell("<a href=\"index.php?module=wiki-cache&amp;action=reload&amp;cache=permissions\">{$lang->wiki_reload}</a>");
+	$table->construct_cell("<a href=\"index.php?module=".MODULE."-cache&amp;action=reload&amp;cache=permissions\">{$lang->wiki_reload}</a>");
 	$table->construct_row();
 
 	$table->output($lang->wiki_cache);

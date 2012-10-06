@@ -1252,9 +1252,11 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				$cid=intval($t['id']);
 				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 				$category_number = 0;
-				foreach($articles as $article) {
-					if($article['cid'] == $cid)
-					    $category_number++;
+				if($articles) {
+					foreach($articles as $article) {
+						if($article['cid'] == $cid)
+						    $category_number++;
+					}
 				}
 				if(wiki_is_allowed("can_edit_sort")) {
 					$category_sort = $t['Sort'];
@@ -1278,6 +1280,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if(wiki_is_allowed("can_edit"))
 					eval("\$additional['control'] = \"".$templates->get("wiki_control")."\";");
 				eval("\$wiki_category = \"".$templates->get("wiki_table")."\";");
+				unset($wiki_table);
 			}
 		}
 

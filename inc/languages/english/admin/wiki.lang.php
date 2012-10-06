@@ -5,16 +5,16 @@ $l['wiki'] = "Wiki";
 /* Settings (Just needed in other languages than english)
 $l['setting_group_wiki'] = "Wiki";
 $l['setting_group_wiki_desc'] = "Settings for the \"Wiki\" Plugin";
-$l['setting_wiki_moderate_new'] = "Moderate new entrys?";
+$l['setting_wiki_moderate_new'] = "Moderate new entries?";
 $l['setting_wiki_moderate_new_desc'] = "";
 $l['setting_wiki_own_sort'] = "Allow own order?";
-$l['setting_wiki_own_sort_desc'] = "Otherwise just the order you saved is available";
+$l['setting_wiki_own_sort_desc'] = "Otherwise only the order you saved is available";
 $l['setting_wiki_stype'] = "Search Type";
 $l['setting_wiki_stype_desc'] = "Which search type should be standard in your forum?";
 $l['setting_wiki_mycode'] = "MyCode";
-$l['setting_wiki_mycode_desc'] = "Which MyCode want you use?";
-$l['setting_wiki_autolink'] = "Link Article automatic";
-$l['setting_wiki_autolink_desc'] = "Link automatical Articles in Posts? Attention: If you have more than one article with the same name or an article with a name like \"and\" this function can make mistakes";
+$l['setting_wiki_mycode_desc'] = "Which MyCode do you want to use?";
+$l['setting_wiki_autolink'] = "Link Article automatically";
+$l['setting_wiki_autolink_desc'] = "Automatically link Articles in Posts? Attention: If you have more than one article with the same name or an article with a name like \"and\" this function can make mistakes";
 $l['setting_wiki_copy'] = "Show Copyright?";
 $l['setting_wiki_copy_desc'] = "It isn't necessary but it would be nice if you display it";
 */
@@ -49,7 +49,7 @@ $l['wiki_version_update'] = "You've installed version \"{1}\" the newest is \"{2
 
 
 /* Liste */
-$l['wiki_list_art'] = "Entrie";
+$l['wiki_list_art'] = "Entries";
 $l['wiki_list_cat'] = "Categories";
 $l['wiki_list_trash'] = "Trash";
 $l['wiki_list_export'] = "Export all";
@@ -71,7 +71,7 @@ $l['wiki_art_art_error'] = "Error";
 $l['wiki_art_short'] = "Shortdescription";
 $l['wiki_art_user'] = "User";
 $l['wiki_art_date'] = "Date";
-$l['wiki_art_no'] = "There are no article";
+$l['wiki_art_no'] = "There are no articles";
 
 $l['wiki_trash_from'] = "Deleted from";
 $l['wiki_trash_date'] = "Deleted on";
@@ -85,7 +85,7 @@ $l['wiki_export_no_data'] = "Can't build the export file";
 /* Import */
 $l['wiki_import_desc'] = "Choose a .xml file to import.<br /><span style=\"color: #FF0000;\">Attention: If you import files from another Board there can be some errors with the Usernames.</span>";
 $l['wiki_import_success'] = "Import successfull.<br />{1} Entries imported<br />{2} Categories imported<br />{3} Entries in the trash imported<br />{4} Versions imported";
-$l['wiki_import_success_new_cat'] = "<br />All entries without categorie have been added to the category {1}";
+$l['wiki_import_success_new_cat'] = "<br />All entries without category have been added to the category {1}";
 $l['wiki_import_no_file'] = "No file choosed";
 $l['wiki_import_error_file'] = "Error while uploading the file";
 $l['wiki_import_invalid_file'] = "No .xml file";
@@ -115,9 +115,9 @@ $l['wiki_can_version_restore'] = "Can restore versions";
 $l['wiki_can_version_delete'] = "Can delete versions";
 $l['wiki_can_version_diff'] = "Can view difference between versions";
 $l['wiki_trash'] = "Trashcan";
-$l['wiki_can_trash_view'] = "Cans see the trashcan";
+$l['wiki_can_trash_view'] = "Can see the trashcan";
 $l['wiki_can_trash_restore'] = "Can restore deleted articles";
-$l['wiki_can_trash_delete'] = "Can delete articles definitivly";
+$l['wiki_can_trash_delete'] = "Can definitively delete articles";
 $l['wiki_other'] = "Other";
 $l['wiki_can_edit_closed'] = "Can edit closed articles";
 $l['wiki_can_view_hidden'] = "Can see hidden articles";
@@ -132,7 +132,7 @@ $l['wiki_articles'] = "Articles";
 $l['wiki_categories'] = "Categories";
 $l['wiki_elements'] = "Number of elements";
 $l['wiki_reload'] = "Reload";
-$l['wiki_cache_empty'] = "The cache \"{1}\" don't exists or is empty";
+$l['wiki_cache_empty'] = "The cache \"{1}\" does not exist or is empty";
 $l['wiki_cache_reload'] = "Cache \"{1}\" reloaded";
 
 
@@ -147,5 +147,5 @@ $l['wiki_permission_update'] = "Can update the plugin";
 
 /* Plugin Library */
 $l['wiki_pl_missing'] = "The installation can't be started because the <b><a href=\"http://mods.mybb.com/view/pluginlibrary\">PluginLibrary</a></b> is missing";
-$l['wiki_pl_old'] = "The installation can't ne started because the <b><a href=\"http://mods.mybb.com/view/pluginlibrary\">PluginLibrary</a></b> is to old (version 8 or newer is needed)";
+$l['wiki_pl_old'] = "The installation can't be started because the <b><a href=\"http://mods.mybb.com/view/pluginlibrary\">PluginLibrary</a></b> is too old (version 8 or newer is needed)";
 ?>

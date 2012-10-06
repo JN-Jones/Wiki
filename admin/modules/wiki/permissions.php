@@ -10,6 +10,11 @@ if(!defined("PLUGINLIBRARY"))
 }
 $PL or require_once PLUGINLIBRARY;
 
+if(function_exists("myplugins_info"))
+    define(MODULE, "myplugins-wiki");
+else
+    define(MODULE, "wiki");
+
 if($mybb->request_method == "post")
 {
 	$db->query('TRUNCATE TABLE '.TABLE_PREFIX.'wiki_permissions');
@@ -40,11 +45,11 @@ if($mybb->request_method == "post")
 	wiki_cache_update("permissions");
 	
 	flash_message($lang->wiki_permissions_saved, 'success');
-	admin_redirect("index.php?module=wiki-permissions");
+	admin_redirect("index.php?module=".MODULE."-permissions");
 }
 
-$page->add_breadcrumb_item($lang->wiki, "index.php?module=wiki");
-$page->add_breadcrumb_item($lang->wiki_permissions, "index.php?module=wiki-permissions");
+$page->add_breadcrumb_item($lang->wiki, "index.php?module=".MODULE."-index");
+$page->add_breadcrumb_item($lang->wiki_permissions, "index.php?module=".MODULE."-permissions");
 
 $page->output_header($lang->wiki_permissions);
 
@@ -59,7 +64,7 @@ $tabs = array(
 $page->output_tab_control($tabs);
 
 // Display permissions
-$form = new Form('index.php?module=wiki-permissions', 'post');
+$form = new Form('index.php?module=".MODULE."-permissions', 'post');
 
 echo "<div id=\"tab_generall\">\n";
 $table = new Table;
