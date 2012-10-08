@@ -16,7 +16,7 @@ $plugins->add_hook("build_friendly_wol_location_end", "wiki_wol_location");
 $plugins->add_hook("parse_message", "wiki_mycode");
 $plugins->add_hook("parse_message_quote", "wiki_mycode");
 $plugins->add_hook("parse_message_end", "wiki_autolink");
-if(in_array("myplugins", $pluginlist['active'])) {
+if(is_array($pluginlist['active']) && in_array("myplugins", $pluginlist['active'])) {
 	$plugins->add_hook("myplugins_actions", "wiki_myplugins_actions");
 	$plugins->add_hook("myplugins_permission", "wiki_myplugins_admin_permissions");
 }
@@ -1892,7 +1892,7 @@ function wiki_templates($install=false)
 </tr>",
 				/* Copyright Hinweis */
                        "copy" => "
-{\$lang->wiki_copy} <a href=\"http://mybbdemo.tk/\">Jones</a>",
+{\$lang->wiki_copy} <a href=\"http://jonesboard.tk/\">Jones</a>",
                        )
         );
 }
