@@ -56,6 +56,7 @@ function wiki_install()
 	wiki_settings(true);
 	wiki_templates(true);
 
+	$col = $db->build_create_table_collation();
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
 				`cid` int(11) NOT NULL,
@@ -69,47 +70,47 @@ function wiki_install()
 				`is_closed` boolean,
 				`awaiting_moderation` boolean,
 				`Sort` int NOT NULL default '0',
-	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1");
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM {$col}");
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_cats` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
 				`pid` int(11) NOT NULL default '-1',
 				`title` varchar(50) DEFAULT NULL,
 				`Sort` int NOT NULL default '0',
-	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM {$col}");
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_trash` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
 				`entry` text,
 				`from` int(10) NOT NULL,
 				`date` bigint(30) NOT NULL,
-	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM {$col}");
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_versions` (
 				`id` int(11) NOT NULL AUTO_INCREMENT,
 				`wid` int(11) NOT NULL DEFAULT '-1',
 				`tid` int(11) NOT NULL DEFAULT '-1',
 				`entry` text,
-	PRIMARY KEY (`id`) ) ENGINE=MyISAM AUTO_INCREMENT=4 DEFAULT CHARSET=latin1");
+	PRIMARY KEY (`id`) ) ENGINE=MyISAM {$col}");
 
-	$db->query('CREATE TABLE '.TABLE_PREFIX.'wiki_permissions (
-		gid int(11) NOT NULL PRIMARY KEY,
-		can_view boolean NOT NULL DEFAULT 1,
-		can_create boolean NOT NULL DEFAULT 1,
-		can_edit boolean NOT NULL DEFAULT 0,
-		can_search boolean NOT NULL DEFAULT 1,
-		can_version_view boolean NOT NULL DEFAULT 0,
-		can_version_restore boolean NOT NULL DEFAULT 0,
-		can_version_delete boolean NOT NULL DEFAULT 0,
-		can_version_diff boolean NOT NULL DEFAULT 0,
-		can_trash_view boolean NOT NULL DEFAULT 0,
-		can_trash_restore boolean NOT NULL DEFAULT 0,
-		can_trash_delete boolean NOT NULL DEFAULT 0,
-		can_edit_closed boolean NOT NULL DEFAULT 0,
-		can_view_hidden boolean NOT NULL DEFAULT 0,
-		can_edit_sort boolean NOT NULL DEFAULT 0,
-		can_unlock boolean NOT NULL DEFAULT 0
-	)');
+	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_permissions` (
+		`gid` int(11) NOT NULL,
+		`can_view` boolean NOT NULL DEFAULT '1',
+		`can_create` boolean NOT NULL DEFAULT '1',
+		`can_edit` boolean NOT NULL DEFAULT '0',
+		`can_search` boolean NOT NULL DEFAULT '1',
+		`can_version_view` boolean NOT NULL DEFAULT '0',
+		`can_version_restore` boolean NOT NULL DEFAULT '0',
+		`can_version_delete` boolean NOT NULL DEFAULT '0',
+		`can_version_diff` boolean NOT NULL DEFAULT '0',
+		`can_trash_view` boolean NOT NULL DEFAULT '0',
+		`can_trash_restore` boolean NOT NULL DEFAULT '0',
+		`can_trash_delete` boolean NOT NULL DEFAULT '0',
+		`can_edit_closed` boolean NOT NULL DEFAULT '0',
+		`can_view_hidden` boolean NOT NULL DEFAULT '0',
+		`can_edit_sort` boolean NOT NULL DEFAULT '0',
+		`can_unlock` boolean NOT NULL DEFAULT '0',
+	PRIMARY KEY (`gid`) ) ENGINE=MyISAM {$col}");
 
 	$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
 			(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_version_diff, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort, can_unlock)
