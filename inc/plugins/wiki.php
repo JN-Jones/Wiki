@@ -247,22 +247,22 @@ function wiki_wol_activity($user_activity)
 		            $user_activity['wiki']['cat'] = substr($user_activity['location'], 15, -5);
 			} else {
 				if(!$parameters['action']) {
-		            $user_activity['wiki']['entry'] = intval($parameters['wid']);
-		            $user_activity['wiki']['cat'] = intval($parameters['cid']);
+		            $user_activity['wiki']['entry'] = (int)$parameters['wid'];
+		            $user_activity['wiki']['cat'] = (int)$parameters['cid'];
 				}
 			}
             if($parameters['action'] == "category_add")
                 $user_activity['wiki']['cat_add'] = true;
             elseif($parameters['action'] == "category_edit")
-                $user_activity['wiki']['cat_edit'] = intval($parameters['cid']);
+                $user_activity['wiki']['cat_edit'] = (int)$parameters['cid'];
             elseif($parameters['action'] == "category_delete")
-                $user_activity['wiki']['cat_delete'] = intval($parameters['cid']);
+                $user_activity['wiki']['cat_delete'] = (int)$parameters['cid'];
             elseif($parameters['action'] == "article_add")
                 $user_activity['wiki']['entry_add'] = true;
             elseif($parameters['action'] == "article_edit")
-                $user_activity['wiki']['entry_edit'] = intval($parameters['wid']);
+                $user_activity['wiki']['entry_edit'] = (int)$parameters['wid'];
             elseif($parameters['action'] == "article_delete")
-                $user_activity['wiki']['entry_delete'] = intval($parameters['wid']);
+                $user_activity['wiki']['entry_delete'] = (int)$parameters['wid'];
             elseif($parameters['action'] == "search")
                 $user_activity['wiki']['search'] = true;
 			break;
@@ -333,7 +333,7 @@ function wiki_mycode($message)
 function wiki_mycode_createID(array $match)
 {
 	global $settings;
-	$id=intval($match[1]); $name=$match[2];
+	$id=(int)$match[1]; $name=$match[2];
 	$wiki = wiki_cache_load("articles", $id);
 	if($wiki['link'])
 	    return '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank" title="'.$wiki['short'].'">'.$name.'</a>';

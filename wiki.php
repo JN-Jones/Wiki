@@ -130,7 +130,7 @@ if($mybb->input['action'] == "do_article_edit" && $mybb->request_method == "post
 
 	verify_post_check($mybb->input['my_post_key']);
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 
 	if(!$mybb->input['wiki_cat'])
 	    $errors[] = $lang->wiki_no_cat;
@@ -185,7 +185,7 @@ if($mybb->input['action']=="article_edit") {
 	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 	$wiki = wiki_cache_load("articles", $wid);
 	// Coming back to this page from an error?
 	if($errors)
@@ -235,7 +235,7 @@ if($mybb->input['action'] == "do_article_delete" && $mybb->request_method == "po
 
 	verify_post_check($mybb->input['my_post_key']);
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 	$wiki = wiki_cache_load("articles", $wid);
 
 	if(!$wiki['id'])
@@ -264,7 +264,7 @@ if($mybb->input['action']=="article_delete") {
 	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 
 	$wiki = wiki_cache_load("articles", $wid);
 	$category = wiki_cache_load("categories", $wiki['cid']);
@@ -298,7 +298,7 @@ if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post")
 	if(!$errors) {
 		$insert_array = array(
 			'title' => $db->escape_string($mybb->input['wiki_name']),
-			'pid' => intval($mybb->input['wiki_cat'])
+			'pid' => (int)$mybb->input['wiki_cat']
 		);
 		$nid = $db->insert_query('wiki_cats', $insert_array);
 
@@ -343,7 +343,7 @@ if($mybb->input['action'] == "do_category_edit" && $mybb->request_method == "pos
 
 	verify_post_check($mybb->input['my_post_key']);
 
-	$cid = intval($mybb->input['cid']);
+	$cid = (int)$mybb->input['cid'];
 
 	if(!$mybb->input['wiki_name'])
 	    $errors[] = $lang->wiki_no_name;
@@ -351,7 +351,7 @@ if($mybb->input['action'] == "do_category_edit" && $mybb->request_method == "pos
 	if(!$errors) {
 		$update_array = array(
 			'title' => $db->escape_string($mybb->input['wiki_name']),
-			'pid' => intval($mybb->input['wiki_cat'])
+			'pid' => (int)$mybb->input['wiki_cat']
 		);
 
 		$db->update_query('wiki_cats', $update_array, "id='{$cid}'");
@@ -370,7 +370,7 @@ if($mybb->input['action']=="category_edit") {
 		error_no_permission();
 
 	$cats = wiki_cache_load("categories");
-	$cid = intval($mybb->input['cid']);
+	$cid = (int)$mybb->input['cid'];
 	$wiki = $cats[$cid];
 	// Coming back to this page from an error?
 	if($errors)
@@ -398,7 +398,7 @@ if($mybb->input['action'] == "do_category_delete" && $mybb->request_method == "p
 
 	verify_post_check($mybb->input['my_post_key']);
 
-	$cid = intval($mybb->input['cid']);
+	$cid = (int)$mybb->input['cid'];
 	$wiki = wiki_cache_load("categories", $cid);
 
 	if(!$wiki['id'])
@@ -421,7 +421,7 @@ if($mybb->input['action']=="category_delete") {
 	if(!wiki_is_allowed("can_edit"))
 		error_no_permission();
 
-	$cid = intval($mybb->input['cid']);
+	$cid = (int)$mybb->input['cid'];
 	$wiki = wiki_cache_load("categories", $cid);
 	eval("\$wiki_category_delete = \"".$templates->get("wiki_category_delete")."\";");
 
@@ -433,7 +433,7 @@ if($mybb->input['action']=="restore") {
 	if(!wiki_is_allowed("can_trash_restore"))
 	    error_no_permission();
 
-	$tid = intval($mybb->input['wid']);
+	$tid = (int)$mybb->input['wid'];
 	$entry = wiki_cache_load("trash", $tid);
 	if(!$entry['entry'])
 	    $errors[]=$lang->wiki_error_invalid_wiki;
@@ -443,7 +443,7 @@ if($mybb->input['action']=="restore") {
 		foreach($entry as $key => $value) {
 		    $entry[$key] = $db->escape_string($value);
 			if($key == "cid") {
-				$cid = intval($entry['cid']);
+				$cid = (int)$entry['cid'];
 				$cats = wiki_cache_load("categories");
 				if(!$cats[$cid] || $cats['cid'] == "") {
 					reset($cats);
@@ -468,7 +468,7 @@ if($mybb->input['action']=="trash_delete") {
 	if(!wiki_is_allowed("can_trash_delete"))
 	    error_no_permission();
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 	$entry = wiki_cache_load("trash", $wid);
 	if(!$entry['id'])
 	    $errors[]=$lang->wiki_error_invalid_wiki;
@@ -493,7 +493,7 @@ if($mybb->input['action']=="trash") {
 	$trashs = wiki_cache_load("trash");
 	if($trashs) {
 		$num = sizeOf($trashs);
-		$page = intval($mybb->input['page']);
+		$page = (int)$mybb->input['page'];
 
 		if($page > 0)
 			$start = ($page-1) *$perpage;
@@ -511,13 +511,13 @@ if($mybb->input['action']=="trash") {
 		$wiki_trash = WIKI_TRASH;
 		foreach($trashs as $entry) {
 			$trash=@unserialize($entry['entry']);
-			$trash_cid = intval($trash['cid']);
+			$trash_cid = (int)$trash['cid'];
 			if(is_array($category) && array_key_exists($trash_cid, $category))
 				$trash['category'] = $category[$trash_cid]['title'];
 			else
 				$trash['category'] = $lang->wiki_trash_unknown_cat;
 			$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);
-			$entry_from = intval($entry['from']);
+			$entry_from = (int)$entry['from'];
 			$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 			$trash=array_merge($trash, $db->fetch_array($query));
 			$trash['id']=$entry['id'];
@@ -548,7 +548,7 @@ if($mybb->input['action']=="restore_version") {
 
 	if(!isset($mybb->input['vid']))
 	    error($lang->wiki_invalid_id);
-	$vid=intval($mybb->input['vid']);
+	$vid=(int)$mybb->input['vid'];
 	$wiki = wiki_cache_load("versions", $vid);
 	$wid = $wiki['wid'];
 	$wiki=@unserialize($wiki['entry']);
@@ -571,7 +571,7 @@ if($mybb->input['action']=="delete_version") {
 	if(!wiki_is_allowed("can_version_delete"))
 	    error_no_permission();
 
-	$vid = intval($mybb->input['vid']);
+	$vid = (int)$mybb->input['vid'];
 	$entry = wiki_cache_load("versions", $vid);
 	$wid = $entry['wid'];
    	if(!$entry['id'])
@@ -602,7 +602,7 @@ if($mybb->input['action']=="show_version") {
 		"allow_videocode" => 0,
 		"filter_badwords" => 0
 	);
-	$vid=intval($mybb->input['vid']);
+	$vid=(int)$mybb->input['vid'];
 	$wiki = wiki_cache_load("versions", $vid);
 	$wid = $wiki['wid'];
 	$wiki=@unserialize($wiki['entry']);
@@ -617,7 +617,7 @@ if($mybb->input['action']=="show_version") {
 
 	$wiki_title = $wiki['title'];
 	$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
-	$uid=intval($wiki['uid']);
+	$uid=(int)$wiki['uid'];
 	$query = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 	$user=$db->fetch_array($query);
 	$user_header = createHeader($user, $wiki, false);
@@ -637,7 +637,7 @@ if($mybb->input['action']=="version_diff") {
 	if($mybb->input['version1'] == $mybb->input['version2'])
 	    $errors[] = $lang->wiki_versions_diff_same;
 
-	$wid = intval($mybb->input['wid']);
+	$wid = (int)$mybb->input['wid'];
 
 	$versions = wiki_cache_load("versions");
 	uasort($versions, "wiki_sort_versions_date");
@@ -724,7 +724,7 @@ if($mybb->input['action']=="versions") {
 
 	if(!isset($mybb->input['wid']))
 	    error($lang->wiki_invalid_id);
-	$wid=intval($mybb->input['wid']);
+	$wid=(int)$mybb->input['wid'];
 	$awiki = wiki_cache_load("articles", $wid);
 	$category = wiki_cache_load("categories", $awiki['cid']);
 	$awiki['cat'] = $category['title'];
@@ -733,7 +733,7 @@ if($mybb->input['action']=="versions") {
 	$versions = wiki_cache_load("versions");
 	if($versions) {
 		$num = 0;;
-		$page = intval($mybb->input['page']);
+		$page = (int)$mybb->input['page'];
 		if($page > 1)
 			$start = ($page-1) *$perpage +1;
 		else {
@@ -750,11 +750,11 @@ if($mybb->input['action']=="versions") {
 			if($wiki['wid'] != $wid)
 			    continue;
 
-			$num++;
+			++$num;
 
 			$vid=$wiki['id'];
 			$wiki=@unserialize($wiki['entry']);
-			$uid=intval($wiki['uid']);
+			$uid=(int)$wiki['uid'];
 			$wiki['date']=date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
 			$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 			$user = $db->fetch_array($user);
@@ -809,7 +809,7 @@ if($mybb->input['action']=="versions") {
 if($mybb->input['action']=="unlock") {
 	if(!isset($mybb->input['wid']))
 	    error($lang->wiki_invalid_id);
-	$wid=intval($mybb->input['wid']);
+	$wid=(int)$mybb->input['wid'];
 
 	if(!wiki_is_allowed("can_edit_closed"))
 	    error_no_permission();
@@ -830,7 +830,7 @@ if($mybb->input['action']=="new") {
 		$articles = array_reverse($articles, true);
 		array_splice($articles, $perpage);
 		foreach($articles as $wiki) {
-			$uid = intval($wiki['uid']);
+			$uid = (int)$wiki['uid'];
 			$user_query = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
 			$user=$db->fetch_array($user_query);
 			$username_formatted = format_name($user['username'], $user['usergroup'], $user['displaygroup']);
@@ -926,8 +926,8 @@ if($mybb->input['action']=="search") {
 		    $mybb->input['year1'] = $copy_year;
 		if($mybb->input['year2']<1970 || $mybb->input['year2'] > $copy_year)
 		    $mybb->input['year2'] = $copy_year;
-		$year1 = intval($mybb->input['year1']);
-		$year2 = intval($mybb->input['year2']);
+		$year1 = (int)$mybb->input['year1'];
+		$year2 = (int)$mybb->input['year2'];
 
 		if($mybb->input['day1'] > 31 || $mybb->input['day1'] < 1 || $mybb->input['day2'] > 31 || $mybb->input['day2'] < 0 ||
 		   	$mybb->input['month1'] > 12 || $mybb->input['month1'] < 1 || $mybb->input['month2'] > 12 || $mybb->input['month2'] < 1)
@@ -1147,7 +1147,7 @@ if($mybb->input['action']=="search") {
 					if($articles) {
 						foreach($articles as $article) {
 							if($article['cid'] == $result['id'])
-							    $number++;
+							    ++$number;
 						}
 					}
 					$rother = "<b>{$lang->wiki_number}: </b>{$number}";
@@ -1184,14 +1184,14 @@ if($mybb->input['action']=="search") {
 }
 if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 	if(isset($mybb->input['cid']) && $mybb->input['cid']!="") {
-		$cid=intval($mybb->input['cid']);
+		$cid=(int)$mybb->input['cid'];
 		$link = "wiki.php?cid=".$cid;
 		if($mybb->input['cpage']) {
-		    $cadd = "?cpage=".intval($mybb->input['cpage']);
-		    $link .= "&amp;cpage=".intval($mybb->input['cpage']);
+		    $cadd = "?cpage=".(int)$mybb->input['cpage'];
+		    $link .= "&amp;cpage=".(int)$mybb->input['cpage'];
 		}
    		if($mybb->input['page']) {
-		    $aadd = "&amp;page=".intval($mybb->input['page']);
+		    $aadd = "&amp;page=".(int)$mybb->input['page'];
 			$link .= $aadd;
 		}
 		if($mybb->input['sort']) {
@@ -1218,7 +1218,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 		if($categorys) {
 			$num = 0;
-			$page = intval($mybb->input['cpage']);
+			$page = (int)$mybb->input['cpage'];
 
 			if($page > 1)
 				$start = ($page-1) *$perpage +1;
@@ -1244,18 +1244,18 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if($t['pid'] != $category['id'])
 				    continue;
 
-				$num++;
+				++$num;
 
 				if($start > $num || $num > $end)
 				    continue;
 
-				$cid=intval($t['id']);
+				$cid=(int)$t['id'];
 				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 				$category_number = 0;
 				if($articles) {
 					foreach($articles as $article) {
 						if($article['cid'] == $cid)
-						    $category_number++;
+						    ++$category_number;
 					}
 				}
 				if(wiki_is_allowed("can_edit_sort")) {
@@ -1286,7 +1286,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 		if($articles) {
 			$num = 0;
-			$page = intval($mybb->input['page']);
+			$page = (int)$mybb->input['page'];
 
 			if($page > 1)
 				$start = ($page-1) *$perpage +1;
@@ -1315,7 +1315,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if($wiki['awaiting_moderation'] && !$moderation)
 				    continue;
 
-				$num++;
+				++$num;
 				if($start > $num || $num > $end)
 				    continue;
 
@@ -1377,7 +1377,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 			"allow_videocode" => 0,
 			"filter_badwords" => 0
 		);
-		$id = intval($mybb->input['wid']);
+		$id = (int)$mybb->input['wid'];
 		$wiki = wiki_cache_load("articles", $id);
 
    		if($wiki['awaiting_moderation'] && !wiki_is_allowed("can_unlock"))
@@ -1396,7 +1396,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 			if($arversions) {
 		 		foreach($arversions as $version) {
 					if($version['wid'] == $id)
-					    $vnumber++;
+					    ++$vnumber;
 				}
 			}
 
@@ -1408,7 +1408,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		if($wiki['awaiting_moderation'])
 			eval("\$unlock = \"".$templates->get("wiki_panel_unlock")."\";");
 
-		$cid=intval($wiki['cid']);
+		$cid=(int)$wiki['cid'];
 		if(wiki_is_allowed("can_create"))
 		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
 
@@ -1427,7 +1427,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		$wiki_title = $wiki['title'];
 		$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
 		$category = wiki_cache_load("categories", $cid);
-		$uid=intval($wiki['uid']);
+		$uid=(int)$wiki['uid'];
 		$query = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 		$user=$db->fetch_array($query);
 		$user_header = createHeader($user, $wiki);
@@ -1442,7 +1442,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		$articles = wiki_cache_load("articles");
 		if($category) {
 			$num = 0;
-			$page = intval($mybb->input['page']);
+			$page = (int)$mybb->input['page'];
 
 			if($page > 1)
 				$start = ($page-1) *$perpage +1;
@@ -1467,18 +1467,18 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if($t['pid'] != -1)
 				    continue;
 
-				$num++;
+				++$num;
 
 				if($start > $num || $num > $end)
 				    continue;
 
-				$cid=intval($t['id']);
+				$cid=(int)$t['id'];
 				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 				$category_number = 0;
 				if($articles) {
 					foreach($articles as $article) {
 						if($article['cid'] == $cid)
-						    $category_number++;
+						    ++$category_number;
 					}
 				}
 				if(wiki_is_allowed("can_edit_sort")) {
@@ -1503,13 +1503,13 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				array_splice($trashs, $perpage);
 				foreach($trashs as $entry) {
 					$trash=@unserialize($entry['entry']);
-					$trash_cid = intval($trash['cid']);
+					$trash_cid = (int)$trash['cid'];
 					if(is_array($category) && array_key_exists($trash_cid, $category))
 						$trash['category'] = $category[$trash_cid]['title'];
 					else
 						$trash['category'] = $lang->wiki_trash_unknown_cat;
 					$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);
-					$entry_from = intval($entry['from']);
+					$entry_from = (int)$entry['from'];
 					$query=$db->simple_select("users", "username AS deletedfrom", "uid='{$entry_from}'");
 					$trash=array_merge($trash, $db->fetch_array($query));
 					$trash['id']=$entry['id'];
@@ -1548,7 +1548,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 		$link = "wiki.php";
 		if($mybb->input['page'])
-		    $link .= "?page=".intval($mybb->input['page']);
+		    $link .= "?page=".(int)$mybb->input['page'];
 
 		if($num > 0)
 			$sort = getsort($link);

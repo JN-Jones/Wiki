@@ -117,7 +117,7 @@ if($mybb->input['action']=="cat") {
 		$trashs = array_reverse($trashs, true);
 		foreach($trashs as $t) {
 			$trash=@unserialize($t['entry']);
-			$uid=intval($t['from']);
+			$uid=(int)$t['from'];
 			$user = $db->simple_select("users", "uid, username, usergroup, displaygroup", "uid='{$uid}'");
 			$user = $db->fetch_array($user);
 			// Get the usergroup
@@ -176,7 +176,7 @@ if($mybb->input['action']=="cat") {
 			if(isset($cid) && $t['cid'] != $cid)
 			    continue;
 			
-			$uid=intval($t['uid']);
+			$uid=(int)$t['uid'];
 			$user = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
 			$user = $db->fetch_array($user);
 			// Get the usergroup

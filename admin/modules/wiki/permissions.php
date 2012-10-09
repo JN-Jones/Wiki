@@ -22,7 +22,7 @@ if($mybb->request_method == "post")
 	foreach($mybb->input['perm'] as $gid => $perms)
 	{
 		$permRow = array(
-				"gid" => intval($gid),
+				"gid" => (int)$gid,
 				"can_view" => in_array("can_view", $perms),
 				"can_create" => in_array("can_create", $perms),
 				"can_edit" => in_array("can_edit", $perms),
