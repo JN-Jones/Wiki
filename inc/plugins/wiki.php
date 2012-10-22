@@ -29,7 +29,7 @@ function wiki_info()
 		"website"		=> "http://jonesboard.tk/",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://jonesboard.tk/",
-		"version"		=> "1.2.1",
+		"version"		=> "1.3 Beta 1 Dev 1",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -95,37 +95,38 @@ function wiki_install()
 
 	$db->query("CREATE TABLE `".TABLE_PREFIX."wiki_permissions` (
 		`gid` int(11) NOT NULL,
-		`can_view` boolean NOT NULL DEFAULT '1',
-		`can_create` boolean NOT NULL DEFAULT '1',
-		`can_edit` boolean NOT NULL DEFAULT '0',
-		`can_search` boolean NOT NULL DEFAULT '1',
-		`can_version_view` boolean NOT NULL DEFAULT '0',
-		`can_version_restore` boolean NOT NULL DEFAULT '0',
-		`can_version_delete` boolean NOT NULL DEFAULT '0',
-		`can_version_diff` boolean NOT NULL DEFAULT '0',
-		`can_trash_view` boolean NOT NULL DEFAULT '0',
-		`can_trash_restore` boolean NOT NULL DEFAULT '0',
-		`can_trash_delete` boolean NOT NULL DEFAULT '0',
-		`can_edit_closed` boolean NOT NULL DEFAULT '0',
-		`can_view_hidden` boolean NOT NULL DEFAULT '0',
-		`can_edit_sort` boolean NOT NULL DEFAULT '0',
-		`can_unlock` boolean NOT NULL DEFAULT '0',
+		`can_view`				boolean NOT NULL DEFAULT '1',
+		`can_create`			boolean NOT NULL DEFAULT '1',
+		`can_edit`				boolean NOT NULL DEFAULT '0',
+		`can_search`			boolean NOT NULL DEFAULT '1',
+		`can_version_view`		boolean NOT NULL DEFAULT '0',
+		`can_version_restore`	boolean NOT NULL DEFAULT '0',
+		`can_version_delete`	boolean NOT NULL DEFAULT '0',
+		`can_version_diff`		boolean NOT NULL DEFAULT '0',
+		`can_trash_view`		boolean NOT NULL DEFAULT '0',
+		`can_trash_restore`		boolean NOT NULL DEFAULT '0',
+		`can_trash_delete`		boolean NOT NULL DEFAULT '0',
+		`can_edit_closed`		boolean NOT NULL DEFAULT '0',
+		`can_view_hidden`		boolean NOT NULL DEFAULT '0',
+		`can_edit_sort`			boolean NOT NULL DEFAULT '0',
+		`can_unlock`			boolean NOT NULL DEFAULT '0',
+		`can_change_template`	boolean NOT NULL DEFAULT '0',
 	PRIMARY KEY (`gid`) ) ENGINE=MyISAM {$col}");
 
 	$db->query('INSERT INTO '.TABLE_PREFIX.'wiki_permissions
 			(gid, can_view, can_create, can_edit, can_search, can_version_view, can_version_restore, can_version_delete, can_version_diff, can_trash_view, can_trash_restore, can_trash_delete, can_edit_closed, can_view_hidden, can_edit_sort, can_unlock)
 		VALUES
-			(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-			(2, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
-			(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+			(1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(2, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1),
+			(3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(5, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+			(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+			(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 		');
 
 	$PL->cache_update("wiki_version", $plugininfo['version']);
-	$PL->cache_update("wiki_pl_version", "8");
+	$PL->cache_update("wiki_pl_version", "10");
 //	wiki_cache_update("permissions");
 }
 
@@ -181,6 +182,7 @@ function wiki_myplugins_actions($actions)
 		'wiki-index' => array('active' => 'wiki-index', 'file' => '../wiki/home.php'),
 		'wiki-article' => array('active' => 'wiki-article', 'file' => '../wiki/article.php'),
 		'wiki-permissions' => array('active' => 'wiki-permissions', 'file' => '../wiki/permissions.php'),
+		'wiki-seo' => array('active' => 'wiki-seo', 'file' => '../wiki/seo.php'),
 		'wiki-import' => array('active' => 'wiki-import', 'file' => '../wiki/import.php'),
 		'wiki-cache' => array('active' => 'wiki-cache', 'file' => '../wiki/cache.php'),
 		'wiki-update' => array('active' => 'wiki-update', 'file' => '../wiki/update.php')
@@ -195,9 +197,10 @@ function wiki_myplugins_actions($actions)
 	$sub_menu['10'] = array("id" => "wiki-article", "title" => $lang->wiki_article, "link" => "index.php?module=myplugins-wiki-article");
 	$sub_menu['15'] = array("id" => "wiki-permissions", "title" => $lang->wiki_permissions, "link" => "index.php?module=myplugins-wiki-permissions");
 	$sub_menu['20'] = array("id" => "wiki-option", "title" => $lang->wiki_option, "link" => "index.php?module=config-settings&action=change&gid=".$g['gid']);
-	$sub_menu['25'] = array("id" => "wiki-import", "title" => $lang->wiki_import, "link" => "index.php?module=myplugins-wiki-import");
-	$sub_menu['30'] = array("id" => "wiki-cache", "title" => $lang->wiki_cache, "link" => "index.php?module=myplugins-wiki-cache");
-	$sub_menu['35'] = array("id" => "wiki-update", "title" => $lang->wiki_update, "link" => "index.php?module=myplugins-wiki-update");
+	$sub_menu['25'] = array("id" => "wiki-seo", "title" => $lang->wiki_seo, "link" => "index.php?module=myplugins-wiki-seo");
+	$sub_menu['30'] = array("id" => "wiki-import", "title" => $lang->wiki_import, "link" => "index.php?module=myplugins-wiki-import");
+	$sub_menu['35'] = array("id" => "wiki-cache", "title" => $lang->wiki_cache, "link" => "index.php?module=myplugins-wiki-cache");
+	$sub_menu['40'] = array("id" => "wiki-update", "title" => $lang->wiki_update, "link" => "index.php?module=myplugins-wiki-update");
 
 	$sidebar = new SidebarItem($lang->wiki);
 	$sidebar->add_menu_items($sub_menu, $actions[$info]['active']);
@@ -217,6 +220,7 @@ function wiki_myplugins_admin_permissions($admin_permissions)
 		"index"	=> $lang->wiki_permission_index,
 		"article"	=> $lang->wiki_permission_article,
 		"permissions"	=> $lang->wiki_permission_permissions,
+		"seo"	=> $lang->wiki_permission_seo,
 		"import"	=> $lang->wiki_permission_import,
 		"cache"	=> $lang->wiki_permission_cache,
 		"update"	=> $lang->wiki_permission_update
@@ -804,7 +808,7 @@ function wiki_update($installed, $uploaded)
 	$up = false;
 
 	$PL->cache_update("wiki_version", $uploaded);
-	$PL->cache_update("wiki_pl_version", "8");
+	$PL->cache_update("wiki_pl_version", "10");
 	if(version_compare($installed, "1.1 Beta 1 Dev 10", "<")) {
 		$db->add_column('wiki', 'Sort', "int NOT NULL default '0'");
 		$db->add_column('wiki_cats', 'Sort', "int NOT NULL default '0'");
@@ -838,10 +842,14 @@ function wiki_update($installed, $uploaded)
 				(6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 				(7, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 			');
+		
+		$up = true;
 	}
 	if(version_compare($installed, "1.2 Beta 1 Dev 2", "<")) {
 	    $db->add_column('wiki_permissions', 'can_unlock', "boolean NOT NULL DEFAULT '0'");
 		$db->update_query("wiki_permissions", array("can_unlock" => 1), "gid='3' OR gid='4' OR gid='6'");
+
+		$up = true;
 	}
 	if(version_compare($installed, "1.2 Beta 2 Dev 1", "<")) {
 	    $db->add_column('wiki_versions', 'tid', "int(11) NOT NULL DEFAULT '-1' AFTER wid");
@@ -853,6 +861,14 @@ function wiki_update($installed, $uploaded)
 	if(version_compare($installed, "1.2 Beta 3 Dev 3", "<")) {
 	    $db->add_column('wiki_permissions', 'can_version_diff', "boolean NOT NULL DEFAULT '0' AFTER can_version_delete");
 		$db->update_query("wiki_permissions", array("can_version_diff" => 1), "gid='2' OR gid='3' OR gid='4' OR gid='6'");
+
+		$up = true;
+	}
+	if(version_compare($installed, "1.3 Beta 1 Dev 1", "<")) {
+	    $db->add_column('wiki_permissions', 'can_change_template', "boolean NOT NULL DEFAULT '0' AFTER can_unlock");
+		$db->update_query("wiki_permissions", array("can_change_template" => 1), "gid='2' OR gid='3' OR gid='4' OR gid='6'");
+
+		$up = true;
 	}
 
 	if($up)
@@ -875,6 +891,12 @@ function wiki_settings($install=false)
 	      	"own_sort" => array(
 	          	"title" => "Allow own order?",
 	          	"description" => "Otherwise just the order you saved is available",
+		        "optionscode" => "yesno",
+		        "value" => "yes",
+	          ),
+	      	"allow_templates" => array(
+	          	"title" => "Activate templates?",
+	          	"description" => "Templates are a kind of MyCode only used in your Wiki",
 		        "optionscode" => "yesno",
 		        "value" => "yes",
 	          ),

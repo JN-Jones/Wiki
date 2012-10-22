@@ -18,9 +18,10 @@ function wiki_meta()
 	$sub_menu['10'] = array("id" => "article", "title" => $lang->wiki_article, "link" => "index.php?module=wiki-article");
 	$sub_menu['15'] = array("id" => "permissions", "title" => $lang->wiki_permissions, "link" => "index.php?module=wiki-permissions");
 	$sub_menu['20'] = array("id" => "option", "title" => $lang->wiki_option, "link" => "index.php?module=config-settings&action=change&gid=".$g['gid']);
-	$sub_menu['25'] = array("id" => "import", "title" => $lang->wiki_import, "link" => "index.php?module=wiki-import");
-	$sub_menu['30'] = array("id" => "cache", "title" => $lang->wiki_cache, "link" => "index.php?module=wiki-cache");
-	$sub_menu['35'] = array("id" => "update", "title" => $lang->wiki_update, "link" => "index.php?module=wiki-update");
+	$sub_menu['25'] = array("id" => "seo", "title" => $lang->wiki_seo, "link" => "index.php?module=wiki-seo");
+	$sub_menu['30'] = array("id" => "import", "title" => $lang->wiki_import, "link" => "index.php?module=wiki-import");
+	$sub_menu['35'] = array("id" => "cache", "title" => $lang->wiki_cache, "link" => "index.php?module=wiki-cache");
+	$sub_menu['40'] = array("id" => "update", "title" => $lang->wiki_update, "link" => "index.php?module=wiki-update");
 	
 //	$query = $db->simple_select("settinggroups", "gid", "name='Wiki'");
 //	if($db->num_rows($query))
@@ -40,6 +41,7 @@ function wiki_action_handler($action)
 		'index' => array('active' => 'index', 'file' => 'home.php'),
 		'article' => array('active' => 'article', 'file' => 'article.php'),
 		'permissions' => array('active' => 'permissions', 'file' => 'permissions.php'),
+		'seo' => array('active' => 'seo', 'file' => 'seo.php'),
 		'import' => array('active' => 'import', 'file' => 'import.php'),
 		'cache' => array('active' => 'cache', 'file' => 'cache.php'),
 		'update' => array('active' => 'update', 'file' => 'update.php')
@@ -67,6 +69,7 @@ function wiki_admin_permissions()
 		"index"	=> $lang->wiki_permission_index,
 		"article"	=> $lang->wiki_permission_article,
 		"permissions"	=> $lang->wiki_permission_permissions,
+		"seo"	=> $lang->wiki_permission_seo,
 		"import"	=> $lang->wiki_permission_import,
 		"cache"	=> $lang->wiki_permission_cache,
 		"update"	=> $lang->wiki_permission_update
