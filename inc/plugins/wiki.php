@@ -63,7 +63,8 @@ function wiki_install()
 				`title` varchar(50) DEFAULT NULL,
 				`link` varchar(100) DEFAULT NULL,
 				`short` varchar(200) DEFAULT NULL,
-				`text` text, `uid` int(10),
+				`text` text,
+				`uid` int(10),
 				`username` varchar(80),
 				`date` bigint(30),
 				`is_hidden` boolean,
@@ -125,7 +126,7 @@ function wiki_install()
 		');
 
 	$PL->cache_update("wiki_version", $plugininfo['version']);
-	$PL->cache_update("wiki_pl_version", "8");
+	$PL->cache_update("wiki_pl_version", "11");
 //	wiki_cache_update("permissions");
 }
 
@@ -804,7 +805,7 @@ function wiki_update($installed, $uploaded)
 	$up = false;
 
 	$PL->cache_update("wiki_version", $uploaded);
-	$PL->cache_update("wiki_pl_version", "8");
+	$PL->cache_update("wiki_pl_version", "11");
 	if(version_compare($installed, "1.1 Beta 1 Dev 10", "<")) {
 		$db->add_column('wiki', 'Sort', "int NOT NULL default '0'");
 		$db->add_column('wiki_cats', 'Sort', "int NOT NULL default '0'");
@@ -853,6 +854,10 @@ function wiki_update($installed, $uploaded)
 	if(version_compare($installed, "1.2 Beta 3 Dev 3", "<")) {
 	    $db->add_column('wiki_permissions', 'can_version_diff', "boolean NOT NULL DEFAULT '0' AFTER can_version_delete");
 		$db->update_query("wiki_permissions", array("can_version_diff" => 1), "gid='2' OR gid='3' OR gid='4' OR gid='6'");
+	}
+	if(version_compare($installed, "1.2.1 Beta 1 Dev 2", "<")) {
+		//This isn't the way the function should be used but it works :D
+	    $db->add_column('wiki_permissions', 'primary key', "(gid)");
 	}
 
 	if($up)
