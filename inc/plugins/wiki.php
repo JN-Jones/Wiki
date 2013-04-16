@@ -26,9 +26,9 @@ function wiki_info()
 	return array(
 		"name"			=> "Wiki",
 		"description"	=> "Adds a wiki to the Forum",
-		"website"		=> "http://jonesboard.tk/",
+		"website"		=> "http://jonesboard.de/",
 		"author"		=> "Jones",
-		"authorsite"	=> "http://jonesboard.tk/",
+		"authorsite"	=> "http://jonesboard.de/",
 		"version"		=> "1.2.1",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
@@ -1898,7 +1898,7 @@ function wiki_templates($install=false)
 </tr>",
 				/* Copyright Hinweis */
                        "copy" => "
-{\$lang->wiki_copy} <a href=\"http://jonesboard.tk/\">Jones</a>",
+{\$lang->wiki_copy} <a href=\"http://jonesboard.de/\">Jones</a>",
                        )
         );
 }
