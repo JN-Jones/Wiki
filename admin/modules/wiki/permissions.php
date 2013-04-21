@@ -64,7 +64,7 @@ $tabs = array(
 $page->output_tab_control($tabs);
 
 // Display permissions
-$form = new Form('index.php?module=".MODULE."-permissions', 'post');
+$form = new Form("index.php?module=".MODULE."-permissions", 'post');
 
 echo "<div id=\"tab_generall\">\n";
 $table = new Table;
