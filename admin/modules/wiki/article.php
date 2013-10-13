@@ -89,6 +89,7 @@ if($mybb->input['action']=="cat") {
 					    $t['number']++;
 				}
 			}
+			$t['title'] = htmlspecialchars_uni($t['title']);
 
 			$table->construct_cell("<a href=\"index.php?module=".MODULE."-article&cat={$t['id']}\">{$t['title']}</a>", array('width' => '50%'));
 			$table->construct_cell($t['number'], array('width' => '25%'));
@@ -138,15 +139,15 @@ if($mybb->input['action']=="cat") {
 			$cat = $category[$trash['cid']]['title'];
 			$date=date($mybb->settings['dateformat'], $t['date'])." ".date($mybb->settings['timeformat'], $t['date']);
 
-			$table->construct_cell($trash['title'], array('width' => '20%'));
+			$table->construct_cell(htmlspecialchars_uni($trash['title']), array('width' => '20%'));
     		if($trash['link'])
 				$table->construct_cell($lang->wiki_art_art_link, array('width' => '10%'));
 			else if($trash['text'])
 				$table->construct_cell($lang->wiki_art_art_text, array('width' => '10%'));
 			else
 				$table->construct_cell($lang->wiki_art_art_error, array('width' => '10%'));
-			$table->construct_cell($trash['short'], array('width' => '40%'));
-			$table->construct_cell($cat, array('width' => '10%'));
+			$table->construct_cell(htmlspecialchars_uni($trash['short']), array('width' => '40%'));
+			$table->construct_cell(htmlspecialchars_uni($cat), array('width' => '10%'));
 			$table->construct_cell($date, array('width' => '10%'));
 			$table->construct_cell($profilelink, array('width' => '10%'));
 			$table->construct_row();
@@ -196,14 +197,14 @@ if($mybb->input['action']=="cat") {
 			$profilelink = build_profile_link($username_formatted, $user['uid']);
 			$date=date($mybb->settings['dateformat'], $t['date'])." ".date($mybb->settings['timeformat'], $t['date']);
 			
-			$table->construct_cell($t['title'], array('width' => '20%'));
+			$table->construct_cell(htmlspecialchars_uni($t['title']), array('width' => '20%'));
     		if($t['link'])
 				$table->construct_cell($lang->wiki_art_art_link, array('width' => '10%'));
 			else if($t['text'])
 				$table->construct_cell($lang->wiki_art_art_text, array('width' => '10%'));
 			else
 				$table->construct_cell($lang->wiki_art_art_error, array('width' => '10%'));
-			$table->construct_cell($t['short'], array('width' => '40%'));
+			$table->construct_cell(htmlspecialchars_uni($t['short']), array('width' => '40%'));
 			$table->construct_cell($profilelink, array('width' => '10%'));
 			$table->construct_cell($date, array('width' => '10%'));
 			$table->construct_cell("<a href=\"index.php?module=".MODULE."-article&action=export&art={$t['id']}\" target=\"_blank\">{$lang->wiki_export}</a>", array('width' => '10%'));

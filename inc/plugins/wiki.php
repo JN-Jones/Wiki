@@ -29,7 +29,7 @@ function wiki_info()
 		"website"		=> "http://jonesboard.de/",
 		"author"		=> "Jones",
 		"authorsite"	=> "http://jonesboard.de/",
-		"version"		=> "1.2.1",
+		"version"		=> "1.2.2",
 		"guid" 			=> "0b842d4741fc27e460013732dd5d6d52",
 		"compatibility" => "16*"
 	);
@@ -617,7 +617,7 @@ function wiki_create_navy($cat, $article = false, $categories = false)
 
 	foreach($cats as $cat)
 	{
-		add_breadcrumb($cat['title'], wiki_get_category($cat['id']));
+		add_breadcrumb(htmlspecialchars_uni($cat['title']), wiki_get_category($cat['id']));
 	}
 }
 

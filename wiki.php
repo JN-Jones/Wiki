@@ -97,21 +97,22 @@ if($mybb->input['action']=="article_add") {
 	if($errors)
 	{
 		$errors = inline_error($errors);
-		$title = $mybb->input['wiki_title'];
-		$link = $mybb->input['wiki_link'];
-		$short = $mybb->input['wiki_short'];
-		$message = $mybb->input['wiki_text'];
+		$title = htmlspecialchars_uni($mybb->input['wiki_title']);
+		$link = htmlspecialchars_uni($mybb->input['wiki_link']);
+		$short = htmlspecialchars_uni($mybb->input['wiki_short']);
+		$message = htmlspecialchars_uni($mybb->input['wiki_text']);
 		if($mybb->input['hide'])
 		    $hide = "checked=\"checked\" ";
 		if($mybb->input['close'])
 		    $close = "checked=\"checked\" ";
-	    $mybb->input['cid'] = $mybb->input['wiki_cat'];
+	    $mybb->input['cid'] = (int)$mybb->input['wiki_cat'];
 	}
 	$cats = wiki_cache_load("categories");
 	if($cats) {
 		uasort($cats, "wiki_sort_title");
 		$wiki_cats="";
 		foreach($cats as $t) {
+			$t['title'] = htmlspecialchars_uni($t['title']);
 	   		if($t['id'] == $mybb->input['cid'])
 				$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
 			else
@@ -197,13 +198,20 @@ if($mybb->input['action']=="article_edit") {
 		$wiki['text'] = $mybb->input['wiki_text'];
 		$wiki['is_hidden'] = $mybb->input['hide'];
 		$wiki['is_closed'] = $mybb->input['close'];
-	    $wiki['cid'] = $mybb->input['wiki_cat'];
+	    $wiki['cid'] = (int)$mybb->input['wiki_cat'];
 	}
+	
+	$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+	$wiki['link'] = htmlspecialchars_uni($wiki['link']);
+	$wiki['short'] = htmlspecialchars_uni($wiki['short']);
+	$wiki['text'] = htmlspecialchars_uni($wiki['text']);
+	
 	$cats = wiki_cache_load("categories");
 	if($cats) {
 		uasort($cats, "wiki_sort_title");
 		$wiki_cats="";
 		foreach($cats as $t) {
+			$t['title'] = htmlspecialchars_uni($t['title']);
 			if($wiki['cid']==$t['id']) {
 				$wiki_cats.="<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
 				$category = $t;
@@ -267,6 +275,7 @@ if($mybb->input['action']=="article_delete") {
 	$wid = (int)$mybb->input['wid'];
 
 	$wiki = wiki_cache_load("articles", $wid);
+	$wiki['title'] = htmlspecialchars_uni($wiki['title']);
 	$category = wiki_cache_load("categories", $wiki['cid']);
 	$wiki['cat'] = $category['title'];
 
@@ -308,7 +317,7 @@ if($mybb->input['action']=="do_category_add" && $mybb->request_method == "post")
 
 		redirect(wiki_get_category($nid), $lang->redirect_wiki_category_add);
 	} else {
-		$mybb->input['action'] = "wiki_category_add";
+		$mybb->input['action'] = "category_add";
 	}
 }
 if($mybb->input['action']=="category_add") {
@@ -327,6 +336,7 @@ if($mybb->input['action']=="category_add") {
 		uasort($cats, "wiki_sort_title");
 		$wiki_cats = "<option value=\"-1\">-</option>";
 		foreach($cats as $t) {
+			$t['title'] = htmlspecialchars_uni($t['title']);
 	   		if($t['id'] == $mybb->input['cid'])
 				$wiki_cats .= "<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
 			else
@@ -423,10 +433,13 @@ if($mybb->input['action']=="category_delete") {
 
 	$cid = (int)$mybb->input['cid'];
 	$wiki = wiki_cache_load("categories", $cid);
-	eval("\$wiki_category_delete = \"".$templates->get("wiki_category_delete")."\";");
 
 	wiki_create_navy($wiki);
 	add_breadcrumb($lang->wiki_nav_category_delete, "wiki.php?action=category_delete");
+
+	$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+	eval("\$wiki_category_delete = \"".$templates->get("wiki_category_delete")."\";");
+
 	output_page($wiki_category_delete);
 }
 if($mybb->input['action']=="restore") {
@@ -511,9 +524,10 @@ if($mybb->input['action']=="trash") {
 		$wiki_trash = WIKI_TRASH;
 		foreach($trashs as $entry) {
 			$trash=@unserialize($entry['entry']);
+			$trash['title'] = htmlspecialchars_uni($trash['title']);
 			$trash_cid = (int)$trash['cid'];
 			if(is_array($category) && array_key_exists($trash_cid, $category))
-				$trash['category'] = $category[$trash_cid]['title'];
+				$trash['category'] = htmlspecialchars_uni($category[$trash_cid]['title']);
 			else
 				$trash['category'] = $lang->wiki_trash_unknown_cat;
 			$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);
@@ -615,7 +629,7 @@ if($mybb->input['action']=="show_version") {
 		eval("\$wiki['hidden'] = \"".$templates->get("wiki_header_hidden")."\";");
 	}
 
-	$wiki_title = $wiki['title'];
+	$wiki_title = htmlspecialchars_uni($wiki['title']);
 	$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
 	$uid=(int)$wiki['uid'];
 	$query = $db->simple_select("users", "uid, username, postnum, avatar, avatardimensions, usergroup, additionalgroups, displaygroup, usertitle, lastactive, lastvisit, invisible, away", "uid='{$uid}'");
@@ -624,7 +638,7 @@ if($mybb->input['action']=="show_version") {
 	eval("\$showversion = \"".$templates->get("wiki_text")."\";");
 
 	wiki_create_navy($category);
-	add_breadcrumb($awiki['title'], wiki_get_article($awiki['id']));
+	add_breadcrumb(htmlspecialchars_uni($awiki['title']), wiki_get_article($awiki['id']));
 	add_breadcrumb($lang->wiki_versions, wiki_get_versions($awiki['id']));
 	add_breadcrumb($wiki['formateddate'], wiki_get_version($vid));
 	output_page($showversion);
@@ -709,7 +723,7 @@ if($mybb->input['action']=="version_diff") {
 		eval("\$diffs = \"".$templates->get("wiki_versions_diff_panel")."\";");
 		eval("\$version_diff = \"".$templates->get("wiki_versions_diff")."\";");
 		wiki_create_navy($wiki, true);
-		add_breadcrumb($wiki['title'], wiki_get_article($wiki['id']));
+		add_breadcrumb(htmlspecialchars_uni($wiki['title']), wiki_get_article($wiki['id']));
 		add_breadcrumb($lang->wiki_versions, wiki_get_versions($wiki['id']));
 		add_breadcrumb($v1['entry']['date']." - ".$v2['entry']['date']);
 		output_page($version_diff);
@@ -728,6 +742,7 @@ if($mybb->input['action']=="versions") {
 	$awiki = wiki_cache_load("articles", $wid);
 	$category = wiki_cache_load("categories", $awiki['cid']);
 	$awiki['cat'] = $category['title'];
+	$awiki['title'] = htmlspecialchars_uni($awiki['title']);
 	if($errors)
 		$errors = inline_error($errors);
 	$versions = wiki_cache_load("versions");
@@ -780,6 +795,8 @@ if($mybb->input['action']=="versions") {
 			if($start > $num || $num > $end)
 			    continue;
 
+			$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+			$wiki['short'] = htmlspecialchars_uni($wiki['short']);
 
 			if(wiki_is_allowed("can_version_restore"))
 				eval("\$restore = \"".$templates->get("wiki_versions_table_restore")."\";");
@@ -837,6 +854,8 @@ if($mybb->input['action']=="new") {
 			$wiki['user'] = build_profile_link($username_formatted, $user['uid']);
 			$wiki['date'] = date($mybb->settings['dateformat'], $wiki['date'])." ".date($mybb->settings['timeformat'], $wiki['date']);
 			$wiki_article = wiki_get_article($wiki['id']);
+			$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+			$wiki['short'] = htmlspecialchars_uni($wiki['short']);
 			eval("\$article_table .= \"".$templates->get("wiki_new_element")."\";");
 		}
 	}
@@ -1013,6 +1032,7 @@ if($mybb->input['action']=="search") {
 
 	if($category) {
 		foreach($category as $cat) {
+			$cat['title'] = htmlspecialchars_uni($cat['title']);
 			if($cat_all)
 			    $mybb->input['cats'][] = $cat['id'];
 
@@ -1025,6 +1045,8 @@ if($mybb->input['action']=="search") {
 
 	//Do we have a string to search for?
 	if(isset($mybb->input['searchString']) && $mybb->input['searchString'] != "") {
+		$mybb->input['searchString'] = htmlspecialchars_uni($mybb->input['searchString']);
+
 		$searchString = $db->escape_string($mybb->input['searchString']);
 		$results = array();
 
@@ -1132,14 +1154,17 @@ if($mybb->input['action']=="search") {
 				if($result['type'] == "articles") {
 					$date=date($mybb->settings['dateformat'], $result['date'])." ".date($mybb->settings['timeformat'], $result['date']);
 				    $rtitle = "[".$lang->wiki_articles."] ";
+				    $result['title'] = htmlspecialchars_uni($result['title']);
+				    $result['short'] = htmlspecialchars_uni($result['short']);
 		       		if($result['link'])
 					    $rtitle .= '<a rel="nofollow" href="'.$result['link'].'" target="_blank">'.$result['title'].'</a>';
 					else if($result['text'])
 						$rtitle .= '<a href="'.$settings['bburl'].'/'.wiki_get_article($result['id']).'">'.$result['title'].'</a>';
-					$rcategory = $category[$result['cid']]['title'];
+					$rcategory = htmlspecialchars_uni($category[$result['cid']]['title']);
 					$rother = "<b>{$lang->wiki_short}: </b>{$result['short']}<br />";
 					$rother .= "<b>{$lang->wiki_date}: </b>$date";
 				} elseif($result['type'] == "category") {
+					$result['title'] = htmlspecialchars_uni($result['title']);
 				    $rtitle = "[".$lang->wiki_category."] ";
 					$rtitle .= '<a href="'.$settings['bburl'].'/'.wiki_get_category($result['id']).'">'.$result['title'].'</a>';
 					$rcategory = "-";
@@ -1153,18 +1178,21 @@ if($mybb->input['action']=="search") {
 					$rother = "<b>{$lang->wiki_number}: </b>{$number}";
 				} elseif($result['type'] == "versions") {
 					$date=date($mybb->settings['dateformat'], $result['entry']['date'])." ".date($mybb->settings['timeformat'], $result['entry']['date']);
+					$result['entry']['title'] = htmlspecialchars_uni($result['entry']['title']);
 				    $rtitle = "[".$lang->wiki_version."] ";
 					$rtitle .= '<a href="'.$settings['bburl'].'/'.wiki_get_version($result['id']).'">'.$result['entry']['title'].'</a>';
-					$rcategory = $category[$result['entry']['cid']]['title'];
+					$rcategory = htmlspecialchars($category[$result['entry']['cid']]['title']);
 					$article = $articles[$result['wid']];
+					$article['title'] = htmlspecialchars_uni($article['title']);
 					$rother = "<b>{$lang->wiki_articles}: </b><a href=\"{$settings['bburl']}/".wiki_get_article($article['id'])."\">{$article['title']}</a><br />";
 					$rother .= "<b>{$lang->wiki_date}: </b>$date";
 				} elseif($result['type'] == "trash") {
 					$date=date($mybb->settings['dateformat'], $result['entry']['date'])." ".date($mybb->settings['timeformat'], $result['entry']['date']);
+					$result['entry']['title'] = htmlspecialchars_uni($result['entry']['title']);
 				    $rtitle = "[".$lang->wiki_trash."] ";
 					$rtitle .= '<a href="'.$settings['bburl'].'/'.$wiki_trash.'">'.$result['entry']['title'].'</a>';
 					if(array_key_exists($result['entry']['cid'], $category))
-						$rcategory = $category[$result['entry']['cid']]['title'];
+						$rcategory = htmlspecialchars_uni($category[$result['entry']['cid']]['title']);
 					else
 						$rcategory = $lang->wiki_trash_unknown_cat;
 					$rother = "<b>{$lang->wiki_date}: </b>$date";
@@ -1248,6 +1276,8 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 
 				if($start > $num || $num > $end)
 				    continue;
+				    
+				$t['title'] = htmlspecialchars_uni($t['title']);
 
 				$cid=(int)$t['id'];
 				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
@@ -1319,14 +1349,16 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if($start > $num || $num > $end)
 				    continue;
 
-	       		if($wiki['link'])
+				$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+
+           		if($wiki['link'])
 				    $wiki_title = '<a rel="nofollow" href="'.$wiki['link'].'" target="_blank">'.$wiki['title'].'</a>';
 				else if($wiki['text'])
 					$wiki_title = '<a href="'.$settings['bburl'].'/'.wiki_get_article($wiki['id']).'">'.$wiki['title'].'</a>';
 				else
 					$wiki_title = $wiki['title'];
 				$background="";
-				$wiki_short = $wiki['short'];
+				$wiki_short = htmlspecialchars_uni($wiki['short']);
 		  		if($wiki['awaiting_moderation'])
 				    $background="#6EFF6E";
 
@@ -1408,6 +1440,8 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		if($wiki['awaiting_moderation'])
 			eval("\$unlock = \"".$templates->get("wiki_panel_unlock")."\";");
 
+		$t['title'] = htmlspecialchars_uni($t['title']);
+
 		$cid=(int)$wiki['cid'];
 		if(wiki_is_allowed("can_create"))
 		    $article_add = "<a href=\"{$mybb->settings['bburl']}/wiki.php?action=article_add&cid={$cid}\" title=\"{$lang->wiki_nav_add}\">{$lang->wiki_nav_add}</a>";
@@ -1424,7 +1458,7 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 		if(isset($article_add) || isset($article_edit) || isset($versions) || isset($unlock))
 		    eval("\$wiki_header = \"".$templates->get("wiki_panel_text")."\";");
 
-		$wiki_title = $wiki['title'];
+		$wiki_title = htmlspecialchars_uni($wiki['title']);
 		$wiki_text = $parser->parse_message($wiki['text'], $parser_options);
 		$category = wiki_cache_load("categories", $cid);
 		$uid=(int)$wiki['uid'];
@@ -1472,6 +1506,8 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				if($start > $num || $num > $end)
 				    continue;
 
+				$t['title'] = htmlspecialchars_uni($t['title']);
+
 				$cid=(int)$t['id'];
 				$category_title = '<a href="'.$settings['bburl'].'/'.wiki_get_category($cid).'">'.$t['title'].'</a>';
 				$category_number = 0;
@@ -1503,9 +1539,10 @@ if(!isset($mybb->input['action']) || $mybb->input['action']=="show") {
 				array_splice($trashs, $perpage);
 				foreach($trashs as $entry) {
 					$trash=@unserialize($entry['entry']);
+					$trash['title'] = htmlspecialchars_uni($trash['title']);
 					$trash_cid = (int)$trash['cid'];
 					if(is_array($category) && array_key_exists($trash_cid, $category))
-						$trash['category'] = $category[$trash_cid]['title'];
+						$trash['category'] = htmlspecialchars_uni($category[$trash_cid]['title']);
 					else
 						$trash['category'] = $lang->wiki_trash_unknown_cat;
 					$trash['deleteddate']=date($mybb->settings['dateformat'], $entry['date'])." ".date($mybb->settings['timeformat'], $entry['date']);

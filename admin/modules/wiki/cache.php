@@ -38,7 +38,7 @@ if($mybb->input['action'] == "view") {
 		flash_message($lang->wiki_cache_empty, 'error');
 		admin_redirect("index.php?module=".MODULE."-cache");
 	}
-	$cachecontents = print_r($wcache, true);
+	$cachecontents = htmlspecialchars_uni(print_r($wcache, true));
 	$table = new Table;
 	$table->construct_cell("<pre>\n{$cachecontents}\n</pre>");
 	$table->construct_row();
