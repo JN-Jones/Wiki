@@ -386,9 +386,12 @@ if($mybb->input['action']=="category_edit") {
 	if($errors)
 		$errors = inline_error($errors);
 
+	$wiki['title'] = htmlspecialchars_uni($wiki['title']);
+
 	uasort($cats, "wiki_sort_title");
 	$wiki_cats = "<option value=\"-1\">-</option>";
 	foreach($cats as $t) {
+		$t['title'] = htmlspecialchars_uni($t['title']);
    		if($t['id'] == $wiki['cid'])
 			$wiki_cats .= "<option value=\"".$t['id']."\" selected=\"selected\">".$t['title']."</option>";
 		else
